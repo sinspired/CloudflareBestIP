@@ -1,0 +1,2 @@
+# CloudflareBestIP
+自动下载知名的几个ip库，自适应识别文件格式进行测速优选。如设置了domain和token，优选ip结果可直接上传到云端，实现自动化更新。
