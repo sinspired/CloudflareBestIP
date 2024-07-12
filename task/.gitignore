@@ -1,0 +1,41 @@
+# 项目和插件的二进制文件
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.ini
+*.yaml
+
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+*.log
+*.csv
+*.rar
+*.txt
+*.zip
+*.bat
+locations.json
+
+
+# Dependency directories (remove the comment below to include it)
+vendor/
+pkd/
+
+# Go workspace file
+go.work
+
+# 编辑器文件夹
+.idea/
+.vscode/
+*/.vscode/
+*/.idea/
+build/
+bin/
+temp/
+test/
+ipLAB/
