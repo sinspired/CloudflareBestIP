@@ -27,7 +27,7 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"ProxyipSpeedtest/task"
+	"github.com/sinspired/CloudflareBestIP/task"
 )
 
 // 定义终端命令行变量
@@ -168,9 +168,17 @@ func main() {
 		fmt.Printf("\033[32mIP库文件已处于最新状态，请修改\033[0m \033[90m-iplab=false\033[0m \033[32m重新运行程序\033[0m\n")
 		os.Exit(0)
 	} else {
-		ipLaburl, exists := ipLabs[*File]
-		if exists {
-			checkIPLab(ipLaburl, *File)
+		lowerFile := strings.ToLower(*File)
+		var matchedFile string
+		for key := range ipLabs {
+			if strings.ToLower(key) == lowerFile {
+				matchedFile = key
+				break
+			}
+		}
+		if matchedFile != "" {
+			*File = matchedFile
+			checkIPLab(ipLabs[matchedFile], *File)
 		} else if *File == "ip.txt" {
 			_, err := os.Stat(*File)
 			if os.IsNotExist(err) {
@@ -229,8 +237,8 @@ func main() {
 	reader := bufio.NewReader(os.Stdin)
 	switch {
 	case *Domain != "" && *Token != "" && countQualified > 0:
-		switch *File {
-		case "txt.zip", "ip_ProxyIPDB.txt", "ip_Cfv4IPDB.txt", "ip_Scanner.txt", "ip_Selected.txt", "Fofa.zip":
+		switch strings.ToLower(*File) {
+		case "txt.zip", "ip_proxyipdb.txt", "ip_cfv4ipdb.txt", "ip_scanner.txt", "ip_selected.txt", "fofa.zip", "ip_proxyipdb":
 			dataUpdate(*outFile, *Domain, *Token)
 		default:
 			fmt.Printf("\n> 优质ip数量：\033[32m%d\033[0m ,是否要上传数据？(y/n):", countQualified)
@@ -272,7 +280,7 @@ func main() {
 	}
 }
 
-// ----------------------功能函数----------------------------------//
+// 功能函数
 
 // 检查location.json文件，如不存在，则从网络下载
 func locationsJsonDownload() {

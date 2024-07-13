@@ -29,7 +29,7 @@ func dataUpdate(fileName string, domain string, token string) {
 
 	// 清除输出内容
 	fmt.Print("\033[2J\033[0;0H")
-	fmt.Printf("优选IP文件 %s 正在上传到 %s",fileName,domain)
+	fmt.Printf("优选IP文件 %s 正在上传到 %s\n",fileName,domain)
 	// 读取文件的前65行内容
 	file, err := os.Open(fileName)
 	if err != nil {

@@ -1,7 +1,5 @@
 github.com/mattn/go-ieproxy v0.0.12 h1:OZkUFJC3ESNZPQ+6LzC3VJIFSnreeFLQyqvBWtvfL2M=
 github.com/mattn/go-ieproxy v0.0.12/go.mod h1:Vn+N61199DAnVeTgaF8eoB9PvLO8P3OBnG95ENh7B7c=
-github.com/sinspired/Cloudflare-IP-SpeedTest v1.1.4 h1:QO1/dolScQ+oqEl8YOLtSSTn8SUdRg3BR8h1EjkdrsQ=
-github.com/sinspired/Cloudflare-IP-SpeedTest v1.1.4/go.mod h1:HcpJ9h250189gih2/yiwx57CkrKcNXgx2G9ti2O37BU=
 golang.org/x/net v0.25.0 h1:d/OCCoBEUq33pjydKrGQhw7IlUPI2Oylr+8qLx49kac=
 golang.org/x/net v0.25.0/go.mod h1:JkAGAh7GEvH74S6FOH42FLoXpXbE/aqXSrIQjXgsiwM=
 golang.org/x/sys v0.22.0 h1:RI27ohtqKCnwULzJLqkv897zojh5/DwS/ENaMzUOaWI=
