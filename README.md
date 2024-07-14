@@ -41,6 +41,7 @@ go build -o BestipTest.exe main.go update.go
 * -tls  是否启用TLS (default true)
 
 * -url 测速文件地址 (default "speed.cloudflare.com/__down?bytes=500000000")
+* -num 测速结果数量 (default 6)
 
 命令行键入 `-h` `help` 获取帮助 `./CloudflareBestIP.exe -h`
 
@@ -59,7 +60,7 @@ go build -o BestipTest.exe main.go update.go
 ### 设置参数
 
 ```powershell
-./BestipTest.exe -tcplimit=300 -httplimit=300 -speedlimit=5 -tls=true -port=443 -iplab=false -max=1000 -speedtest=5 -file="txt.zip" -outfile="result.csv" -domain="x.xxx.com" -token="password" -countries="US,Sg,DE"
+./BestipTest.exe -tcplimit=300 -httplimit=300 -speedlimit=5 -tls=true -port=443 -iplab=false -max=1000 -speedtest=5 -file="txt.zip" -outfile="result.csv" -domain="x.xxx.com" -token="password" -countries="US,Sg,DE" -num="10"
 ```
 
 请替换参数值以符合您的实际需求。

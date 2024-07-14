@@ -39,4 +39,6 @@ bin/
 temp/
 test/
 ipLAB/
-ipscanner/
+# ipscanner/
+FofaCSV/
+FofaCSVOutput/

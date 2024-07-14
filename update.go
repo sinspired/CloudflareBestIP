@@ -58,7 +58,7 @@ func dataUpdate(fileName string, domain string, token string) {
 
 	// 设置超时
 	client := &http.Client{
-		Timeout: time.Second * 10, // 设置超时时间为30秒
+		Timeout: time.Second * 230, // 设置超时时间为30秒
 	}
 	// 发送更新请求
 	resp, err := client.Get(updateUrlStr)

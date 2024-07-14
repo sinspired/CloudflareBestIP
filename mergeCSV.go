@@ -67,7 +67,6 @@ func main() {
 		}
 		return nil
 	})
-
 	if err != nil {
 		fmt.Println("遍历文件夹错误:", err)
 		return
