@@ -8,18 +8,19 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var (
-	ipFile_NoTLS  = "ip_Fofa-0.txt"
-	ipFile_TLS    = "ip_Fofa.txt"
-	zipFile       = "Fofas.zip"
+	ipFile_NoTLS = "ip_Fofa-0.txt"
+	ipFile_TLS   = "ip_Fofa.txt"
+	zipFile      = "Fofas.zip"
 )
 
 func main() {
 	// 接受文件夹参数
 	folder := "FofaCSV"
-	outputFolder := folder+"Output"
+	outputFolder := folder + "Output"
 	os.Mkdir(outputFolder, 0o755)
 
 	fmt.Println("开始处理文件夹:", folder)
@@ -40,7 +41,7 @@ func main() {
 		}
 	}
 	// fmt.Printf("\nNoTLS IP文件已生成：%s\n", filepath.Join(outputFolder, ipFile_NoTLS))
-	fmt.Printf("\ntlsIP文件已生成：%s\n",filepath.Join(outputFolder, ipFile_TLS)) 
+	fmt.Printf("\ntlsIP文件已生成：%s\n", filepath.Join(outputFolder, ipFile_TLS))
 
 	// 压缩生成的txt文件
 	zipFilePath := filepath.Join(outputFolder, zipFile)
@@ -76,7 +77,7 @@ func processCSV(filePath, outputFolder string, zipFiles *[]string) {
 	}
 
 	// 获取各列的索引
-	var ipIndex, portIndex, countryIndex, protocolIndex int
+	var ipIndex, portIndex, countryIndex, protocolIndex, orgIndex int
 	for i, header := range headers {
 		switch header {
 		case "ip":
@@ -87,10 +88,12 @@ func processCSV(filePath, outputFolder string, zipFiles *[]string) {
 			countryIndex = i
 		case "protocol":
 			protocolIndex = i
+		case "as_organization":
+			orgIndex = i
 		}
 	}
 
-	var ips, ports, countries, protocols []string
+	var ips, ports, countries, protocols, orgs []string
 	for {
 		record, err := reader.Read()
 		if err == io.EOF {
@@ -104,9 +107,16 @@ func processCSV(filePath, outputFolder string, zipFiles *[]string) {
 		ports = append(ports, record[portIndex])
 		countries = append(countries, record[countryIndex])
 		protocols = append(protocols, record[protocolIndex])
+		orgs = append(orgs, record[orgIndex])
 	}
-
-	uniqueIPs := unique(ips)
+	cleanIPs := []string{}
+	for i, ip := range ips {
+		
+		if !strings.Contains(orgs[i], "Alibaba") && !strings.Contains(orgs[i], "Cloudflare") {
+			cleanIPs = append(cleanIPs, ip)
+		}
+	}
+	uniqueIPs := unique(cleanIPs)
 
 	if allEqual(ports) {
 		protocol := "0"
@@ -125,10 +135,12 @@ func processCSV(filePath, outputFolder string, zipFiles *[]string) {
 	} else {
 		httpIPs, httpsIPs := []string{}, []string{}
 		for i, ip := range ips {
-			if protocols[i] == "http" {
-				httpIPs = append(httpIPs, fmt.Sprintf("%s:%s", ip, ports[i]))
-			} else {
-				httpsIPs = append(httpsIPs, fmt.Sprintf("%s:%s", ip, ports[i]))
+			if !strings.Contains(orgs[i], "Alibaba") && !strings.Contains(orgs[i], "Cloudflare") {
+				if protocols[i] == "http" {
+					httpIPs = append(httpIPs, fmt.Sprintf("%s:%s", ip, ports[i]))
+				} else {
+					httpsIPs = append(httpsIPs, fmt.Sprintf("%s:%s", ip, ports[i]))
+				}
 			}
 		}
 		writeToFile(filepath.Join(outputFolder, ipFile_NoTLS), unique(httpIPs))
