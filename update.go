@@ -26,10 +26,9 @@ func removeBOM(data []byte) []byte {
 
 // 更新数据
 func dataUpdate(fileName string, domain string, token string) {
-
 	// 清除输出内容
 	fmt.Print("\033[2J\033[0;0H")
-	fmt.Printf("优选IP文件 %s 正在上传到 %s\n",fileName,domain)
+	fmt.Printf("优选IP文件 %s 正在上传到 %s\n", fileName, domain)
 	// 读取文件的前65行内容
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -63,7 +62,7 @@ func dataUpdate(fileName string, domain string, token string) {
 	// 发送更新请求
 	resp, err := client.Get(updateUrlStr)
 	if err != nil {
-		fmt.Printf("发送更新请求时出错: %v\n", err)
+		fmt.Printf("发送更新请求时出错,请手动上传文件或重新执行程序！\n %v\n", err)
 		return
 	}
 

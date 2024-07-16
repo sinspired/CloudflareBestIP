@@ -32,7 +32,7 @@ import (
 
 // 定义终端命令行变量
 var (
-	File             = flag.String("file", "txt.zip", "IP地址文件名称(*.txt或*.zip)")                   // IP地址文件名称
+	File             = flag.String("file", "txt.zip", "IP地址文件名称(*.txt或*.zip)")                     // IP地址文件名称
 	outFile          = flag.String("outfile", "result.csv", "输出文件名称(自动设置)")                        // 输出文件名称
 	defaultPort      = flag.Int("port", 443, "默认端口")                                               // 端口
 	maxThreads       = flag.Int("max", 200, "并发请求最大协程数")                                           // 最大协程数
@@ -162,7 +162,7 @@ func main() {
 
 	// 网络环境检测，如网络不正常自动退出
 	if !autoNetworkDetection() {
-		// return
+		return
 	}
 
 	// 存储国家代码到数组中
@@ -580,7 +580,7 @@ func processASNZipedFiles(fileInfos []task.FileInfo) {
 		uniqueIPs := getUniqueIPs(info.Content)
 		totalIPs += len(uniqueIPs)
 	}
-
+	fmt.Println("\n成功获取去重ip列表，开始TCP/HTTP延迟检测...\n")
 	// 检测每个文件中的有效 IP
 	for _, info := range fileInfos {
 		// 获取唯一的 IP 列表
@@ -641,13 +641,13 @@ func processIPListFile(fileName string) {
 // logWithProgress 显示进度条
 func logWithProgress(countProcessed, total int) {
 	percentage := float64(countProcessed) / float64(total) * 100
-	barLength := 20 // 进度条长度
+	barLength := 28 // 进度条长度
 	progress := int(percentage / 100 * float64(barLength))
 
 	// 构建进度条
 	bar := fmt.Sprintf("\033[32m%s\033[0m%s", strings.Repeat("■", progress), strings.Repeat("▣", barLength-progress))
 	// 并发检测进度显示
-	fmt.Printf("\r\033[90m%d\033[0m / \033[90m%d\033[0m 进度:%s \033[1;32m%.2f%%\033[0m ", countProcessed, total, bar, percentage)
+	fmt.Printf("\r进度%s\033[1;32m%6.2f%%\033[0m \033[90m%d\033[0m/\033[90m%d\033[0m ", bar, percentage, countProcessed, total)
 }
 
 // delayedDetectionIPs 对给定的 IP 列表进行延迟检测，并返回存活 IP 的数量。
@@ -681,12 +681,10 @@ func delayedDetectionIPs(ips []string, enableTLS bool, port int) int {
 				wg.Done()
 				// countProcessed++ // 已处理 IP 数计数器
 				atomic.AddInt32(&countProcessedInt32, 1) // 使用原子操作增加计数器
-
-				// 调用logWithProgress 函数输出进度信息
-
 				countProcessedInt := int(atomic.LoadInt32(&countProcessedInt32))
+				// 调用logWithProgress 函数输出进度信息
 				logWithProgress(countProcessedInt, total)
-				fmt.Printf("存活 IP: \033[1;32;5m%d\033[0m \r", countAlive)
+				fmt.Printf("存活 IP: \033[1;32;5m%d\033[0m     \r", countAlive)
 			}()
 
 			// 如果 IP 格式为 ip:port，则分离 IP 和端口
@@ -771,7 +769,7 @@ func delayedDetectionIPs(ips []string, enableTLS bool, port int) int {
 			var buf bytes.Buffer
 			_, err = io.Copy(&buf, resp.Body)
 			if err != nil {
-				fmt.Printf("IP %s 读取响应体错误: %v\n", ip, err)
+				// fmt.Printf("IP %s 读取响应体错误: %v\n", ip, err)
 				return
 			}
 
@@ -788,11 +786,11 @@ func delayedDetectionIPs(ips []string, enableTLS bool, port int) int {
 						if len(countries) == 0 || containsIgnoreCase(countries, loc.Cca2) {
 							countAlive++ // 记录存活 IP 数量
 							if ok {
-								fmt.Printf("-有效 IP %s 端口 %d 位置:%s.%s 延迟 %d ms      \n", ip, port, loc.City, loc.Cca2, tcpDuration.Milliseconds())
+								fmt.Printf("-IP %-15s 端口 %-5d 位置:%2s%12s 延迟 %3d ms  \n", ip, port, loc.Cca2, loc.City, tcpDuration.Milliseconds())
 
 								resultChan <- latencyTestResult{ip, port, enableTLS, dataCenter, loc.Region, loc.Cca2, loc.City, fmt.Sprintf("%d", duration.Milliseconds()), fmt.Sprintf("%d", tcpDuration.Milliseconds())}
 							} else {
-								fmt.Printf("-有效 IP %s 端口 %d 位置信息未知 延迟 %d ms      \n", ip, port, tcpDuration.Milliseconds())
+								fmt.Printf("-IP %-15s 端口 %-5d 位置信息未知 延迟 %-3d ms      \n", ip, port, tcpDuration.Milliseconds())
 
 								resultChan <- latencyTestResult{ip, port, enableTLS, dataCenter, "", "", "", fmt.Sprintf("%d", duration.Milliseconds()), fmt.Sprintf("%d", tcpDuration.Milliseconds())}
 							}
@@ -814,8 +812,8 @@ func delayedDetectionIPs(ips []string, enableTLS bool, port int) int {
 	if int(atomic.LoadInt32(&countProcessedInt32)) == total {
 		countProcessedInt := int(atomic.LoadInt32(&countProcessedInt32))
 		logWithProgress(countProcessedInt, total)
-		fmt.Printf("存活 IP: \033[1;32;5m%d\033[0m \r", countAlive)
-		fmt.Printf("\nTCP/HTTP 延迟检测完成！\n")
+		fmt.Printf("存活 IP: \033[1;32;5m%-3d\033[0m \r", countAlive)
+		fmt.Printf("\n\nTCP/HTTP 延迟检测完成！\n")
 		// pause()
 	}
 	return countAlive
@@ -885,7 +883,7 @@ func readIPs(File string) ([]string, error) {
 		ips = append(ips, ip)
 	}
 
-	fmt.Println("\n成功获取去重ip列表，开始TCP/HTTP延迟检测...")
+	fmt.Println("\n成功获取去重ip列表，开始TCP/HTTP延迟检测...\n")
 
 	return ips, scanner.Err()
 }
@@ -944,7 +942,7 @@ func getDownloadSpeed(ip string, port int, enableTLS bool, latency string, tcpla
 	req.Close = true
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("-IP %s 端口 %s %v\033[9;31m测速无效\033[0m                                 \n", ip, strconv.Itoa(port), enableTLS)
+		// fmt.Printf("-IP %-15s 端口 %-5s \033[9;31m测速无效\033[0m%s\n", ip, strconv.Itoa(port), strings.Repeat(" ", 15))
 		return 0
 	}
 	defer resp.Body.Close()
@@ -953,18 +951,19 @@ func getDownloadSpeed(ip string, port int, enableTLS bool, latency string, tcpla
 	written, _ := io.Copy(io.Discard, resp.Body)
 	duration := time.Since(startTime_duration)
 
-	// speed_KB := float64(written) / duration.Seconds() / 1024  //单位KB/s
 	speedOrignal := float64(written) / duration.Seconds() / (1024 * 1024) // 真实测速数据，如开多协程会有失真。单位MB/s
 
 	if *multipleNum == 1 || *speedTestThreads < 5 {
 		speed := float64(written) / duration.Seconds() / (1024 * 1024)
 		// 输出结果
-		fmt.Printf("-IP %s 端口 %s tcp/http延迟：%s/%s ms下载速度 %.1f MB/s        \n", ip, strconv.Itoa(port), tcplatency, latency, speed)
+		if speed >= 1 {
+			fmt.Printf("-IP %-15s 端口 %-5s 延迟 %3s ms  速度 %2.1f MB/s%s\n", ip, strconv.Itoa(port), tcplatency, speed, strings.Repeat(" ", 12))
+		}
 		return speed
 	} else {
 		// 多协程测速会有速度损失，加以补偿
 		speed := float64(written) / duration.Seconds() / (1024 * 1024) * (*multipleNum)
-		fmt.Printf("-IP %s 端口 %s 下载速度 %.1f MB/s, 补偿系数 %.0f × %.1f MB/s\n", ip, strconv.Itoa(port), speed, *multipleNum, speedOrignal)
+		fmt.Printf("-IP %-15s 端口 %-5s 延迟 %3s ms  下载速度 %2.1f MB/s, 补偿系数 %.0f×%2.1f MB/s\n", ip, strconv.Itoa(port), tcplatency, speed, *multipleNum, speedOrignal)
 		return speed
 	}
 }
@@ -1016,6 +1015,7 @@ func downloadSpeedTest() {
 		thread := make(chan struct{}, *speedTestThreads)
 		total := len(totalResultChan)
 		var resultCount int32 = 0
+		// 根据ticp延迟排序
 		sort.Slice(totalResultChan, func(i, j int) bool {
 			durationI, _ := strconv.ParseFloat(totalResultChan[i].tcpDuration, 64)
 			durationJ, _ := strconv.ParseFloat(totalResultChan[j].tcpDuration, 64)
@@ -1023,18 +1023,6 @@ func downloadSpeedTest() {
 		})
 
 		for id, res := range totalResultChan {
-
-			// select {
-			// case <-ctx.Done():
-			// 	break
-			// default:
-			// 	if atomic.LoadInt32(&resultCount) >= int32(*RequestNum) && countAlive >= 200 {
-			// 		fmt.Println("\n1已获取到足够数量的ip，继续运行会消耗过多资源和时间！")
-			// 		cancel()
-			// 		break
-			// 	}
-			// }
-
 			wg.Add(1)
 			thread <- struct{}{}
 			go func(id int, res latencyTestResult) {
@@ -1043,38 +1031,14 @@ func downloadSpeedTest() {
 					wg.Done()
 					// 记录下载测速进度
 					atomic.AddInt32(&countSt, 1)
-					// percentage := float64(countSt) / float64(total) * 100
-					// fmt.Printf("协程 \033[33m%d\033[0m 已检测 %s  总进度 \033[1;32m%.2f%%\033[0m                   \r", id+1, res.ip, percentage)
-					// fmt.Printf("完成 %d，总数量 %d 进度 \033[1;32m%.2f%%\033[0m                   \r", countSt, total, percentage)
+
 					logWithProgress(int(countSt), total)
-					// if atomic.LoadInt32(&resultCount) == int32(*RequestNum) && countAlive >= 200 {
-					// 	fmt.Println("\n333已获取到足够数量的ip，继续运行会消耗过多资源和时间！")
-					// 	cancel()
-					// 	return
-					// }
-					fmt.Printf(" 合格ip数量：%d\r", atomic.LoadInt32(&resultCount))
+					fmt.Printf(" 优选 IP：\033[1;32;5m%-2d\033[0m       \r", atomic.LoadInt32(&resultCount))
 					// 测速进程运行完成
 					if atomic.LoadInt32(&countSt) == int32(total) {
-						fmt.Println("\n下载速度测试完成！")
+						fmt.Println("\n\n下载速度测试完成！")
 					}
 				}()
-
-				// // 记录下载测速进度
-				// atomic.AddInt32(&countSt, 1)
-				// percentage := float64(countSt) / float64(total) * 100
-
-				// downloadSpeed := getDownloadSpeed(res.ip, res.port, res.tls, res.latency, res.tcpDuration)
-				// mu.Lock()
-				// mu.Lock()
-				// defer mu.Unlock()
-				// if downloadSpeed >= *speedLimit {
-				// 	results = append(results, speedTestResult{latencyTestResult: res, downloadSpeed: downloadSpeed})
-				// 	atomic.AddInt32(&resultCount, 1)
-				// 	fmt.Printf("IP %s:%d 测速完成，速度: %.2f MB/s\n", res.ip, res.port, downloadSpeed)
-				// }
-				// mu.Unlock()
-				// fmt.Printf("协程 \033[33m%d\033[0m 正在检测 %s  总进度 \033[1;32m%.2f%%\033[0m                   \r", id+1, res.ip, percentage)
-				// fmt.Printf("创建测速协程 \033[33m%d\033[0m\r ", id+1)
 
 				select {
 				case <-ctx.Done():
@@ -1086,20 +1050,14 @@ func downloadSpeedTest() {
 					results = append(results, speedTestResult{latencyTestResult: res, downloadSpeed: downloadSpeed})
 					if downloadSpeed >= *speedLimit {
 						atomic.AddInt32(&resultCount, 1)
-						// fmt.Printf("IP %s:%d 测速完成，速度: %.2f MB/s\n", res.ip, res.port, downloadSpeed)
 					}
-					if atomic.LoadInt32(&resultCount) == int32(*RequestNum) && countAlive >= 200 &&!*DownloadTestAll{
+					if atomic.LoadInt32(&resultCount) == int32(*RequestNum) && countAlive >= 200 && !*DownloadTestAll {
 						fmt.Println("\n4已获取到足够数量的ip，继续运行会消耗过多资源和时间！")
 						cancel()
 						return
 					}
 				}
 			}(id, res)
-			// if atomic.LoadInt32(&resultCount) == int32(*RequestNum) && countAlive >= 200 {
-			// 	fmt.Println("\n2已获取到足够数量的ip，继续运行会消耗过多资源和时间！")
-			// 	cancel()
-			// 	break
-			// }
 		}
 		wg.Wait()
 		// pause()
@@ -1165,16 +1123,16 @@ func writeResults(results []speedTestResult) {
 
 	if *speedTestThreads > 0 {
 		if countQualified > 0 {
-			writer.Write([]string{"IP地址", "端口", "TLS", "数据中心", "地区", "国家", "城市", "http延迟(ms)", "tcp延迟", "下载速度(MB/s)"})
+			writer.Write([]string{"IP地址", "端口", "TLS", "数据中心", "地区", "国家", "城市", "http延迟", "tcp延迟", "下载速度(MB/s)"})
 		}
-		writerUnqualified.Write([]string{"IP地址", "端口", "TLS", "数据中心", "地区", "国家", "城市", "http延迟(ms)", "tcp延迟", "下载速度(MB/s)"})
+		writerUnqualified.Write([]string{"IP地址", "端口", "TLS", "数据中心", "地区", "国家", "城市", "http延迟", "tcp延迟", "下载速度(MB/s)"})
 	} else {
 		writer.Write([]string{"IP地址", "端口", "TLS", "数据中心", "地区", "国家", "城市", "延迟(ms)"})
 		writerUnqualified.Write([]string{"IP地址", "端口", "TLS", "数据中心", "地区", "国家", "城市", "延迟(ms)"})
 	}
 	// fmt.Printf("\n")
 	if countQualified > 0 {
-		fmt.Printf("\n\n优选ip,下载速度高于 \033[32m%.1f\033[0m MB/s，测速结果：\n", *speedLimit)
+		fmt.Printf("\n\n优选ip,下载速度高于 \033[32m%2.1f\033[0m MB/s，测速结果：\n", *speedLimit)
 	}
 	requestNum := *RequestNum
 	num := 0
@@ -1189,22 +1147,14 @@ func writeResults(results []speedTestResult) {
 				writer.Write([]string{res.latencyTestResult.ip, strconv.Itoa(res.latencyTestResult.port), strconv.FormatBool(*enableTLS), res.latencyTestResult.dataCenter, res.latencyTestResult.region, res.latencyTestResult.country + "-" + suffixName, res.latencyTestResult.city, res.latencyTestResult.latency, res.tcpDuration, fmt.Sprintf("%.1f", res.downloadSpeed)})
 
 				// 终端输出优选结果
-				fmt.Printf("%s:%d#%s-%.1f MB/s tcp/http-%sms/%sms\n", res.latencyTestResult.ip, res.latencyTestResult.port, res.latencyTestResult.country, res.downloadSpeed, res.tcpDuration, res.latency)
-
-				// // 限制输出结果数量
-				// if num >= requestNum {
-				// 	fmt.Printf("已获取到 %d 条有效数据，其余数据将存入 %s", num, outFileUnqualified)
-				// 	break
-				// }
+				fmt.Printf("%-15s:%-5d#%-2s-%2.1f MB/s tcp延迟 %-3sms\n", res.latencyTestResult.ip, res.latencyTestResult.port, res.latencyTestResult.country, res.downloadSpeed, res.tcpDuration)
 
 			} else {
 				writerUnqualified.Write([]string{res.latencyTestResult.ip, strconv.Itoa(res.latencyTestResult.port), strconv.FormatBool(*enableTLS), res.latencyTestResult.dataCenter, res.latencyTestResult.region, res.latencyTestResult.country, res.latencyTestResult.city, res.latencyTestResult.latency, res.tcpDuration, fmt.Sprintf("%.1f", res.downloadSpeed)})
-				// fmt.Printf("bad:%s:%d#%s-%.1f MB/s tcp/http-%sms/%sms\n", res.latencyTestResult.ip, res.latencyTestResult.port, res.latencyTestResult.country, res.downloadSpeed, res.tcpDuration, res.latency)
 			}
 		} else {
 			writer.Write([]string{res.latencyTestResult.ip, strconv.Itoa(res.latencyTestResult.port), strconv.FormatBool(*enableTLS), res.latencyTestResult.dataCenter, res.latencyTestResult.region, res.latencyTestResult.country, res.latencyTestResult.city, res.latencyTestResult.latency})
 			writerUnqualified.Write([]string{res.latencyTestResult.ip, strconv.Itoa(res.latencyTestResult.port), strconv.FormatBool(*enableTLS), res.latencyTestResult.dataCenter, res.latencyTestResult.region, res.latencyTestResult.country, res.latencyTestResult.city, res.latencyTestResult.latency})
-
 		}
 	}
 
