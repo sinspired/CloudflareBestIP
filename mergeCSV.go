@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func main() {
@@ -17,16 +18,24 @@ func main() {
 
 	// 检查是否提供了文件夹路径
 	if len(args) < 1 {
-		fmt.Println("请提供文件夹路径（相对路径或绝对路径），例如：go run mergeCSV.go folderpath")
+		fmt.Println("请提供文件夹路径（相对路径或绝对路径）和结果文件名，例如：go run mergeCSV.go folderpath mergedTxtFile")
 		return
 	}
 
 	// 文件夹路径
 	folderPath := args[0]
+	mergedTxtFile := args[1]
+	if mergedTxtFile == "" {
+		if strings.Contains(folderPath, "ipscanner") {
+			mergedTxtFile = "ip_Scanner.txt"
+		} else {
+			mergedTxtFile = "ip_Merged.txt"
+		}
+	}
 
 	// 创建一个新的 TXT 文件来存储结果
 	// https://codeload.github.com/ip-scanner/cloudflare/zip/refs/heads/main
-	outputFile, err := os.Create("ip_Scanner.txt")
+	outputFile, err := os.Create(mergedTxtFile)
 	if err != nil {
 		fmt.Println("无法创建输出文件:", err)
 		return

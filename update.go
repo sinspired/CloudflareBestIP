@@ -13,7 +13,7 @@ import (
 )
 
 // func main() {
-// 	dataUpdate("result_test.csv")
+// 	dataUpdate("result_test.csv", "example.com", "your_token")
 // }
 
 // 移除BOM（字节顺序标记）
@@ -22,6 +22,22 @@ func removeBOM(data []byte) []byte {
 		return data[3:]
 	}
 	return data
+}
+
+// 发送HTTP GET请求并处理重试逻辑
+func sendGetRequest(client *http.Client, urlStr string, maxRetries int) (*http.Response, error) {
+	var resp *http.Response
+	var err error
+	for i := 0; i < maxRetries; i++ {
+		resp, err = client.Get(urlStr)
+		if err == nil {
+			return resp, nil
+		}
+		// fmt.Printf("请求失败（重试 %d/%d 次）：%v\n", i+1, maxRetries, err)
+		fmt.Printf("请求失败（重试 %d/%d 次）\n", i+1, maxRetries)
+		time.Sleep(1 * time.Second) // 等待2秒后重试
+	}
+	return nil, err
 }
 
 // 更新数据
@@ -55,17 +71,24 @@ func dataUpdate(fileName string, domain string, token string) {
 	// 构造更新URL
 	updateUrlStr := fmt.Sprintf("https://%s/%s?token=%s&b64=%s&v=%d", domain, url.PathEscape(fileName), token, url.QueryEscape(base64Text), time.Now().Unix())
 
-	// 设置超时
+	// 设置HTTP客户端，启用Keep-Alive和重试逻辑
 	client := &http.Client{
-		Timeout: time.Second * 230, // 设置超时时间为30秒
-	}
-	// 发送更新请求
-	resp, err := client.Get(updateUrlStr)
-	if err != nil {
-		fmt.Printf("发送更新请求时出错,请手动上传文件或重新执行程序！\n %v\n", err)
-		return
+		Transport: &http.Transport{
+			MaxIdleConns:        10,                      // 最大空闲连接数
+			IdleConnTimeout:     30 * time.Second,        // 空闲连接的超时时间
+			MaxIdleConnsPerHost: 2,                       // 每个主机的最大空闲连接数
+			DisableKeepAlives:   false, // 启用 Keep-Alive
+			// TLSHandshakeTimeout: 10 * time.Second,
+		},
+		Timeout: time.Second * 30, // 设置单次请求超时时间为30秒
 	}
 
+	// 发送更新请求
+	resp, err := sendGetRequest(client, updateUrlStr, 5) // 尝试重试5次
+	if err != nil {
+		fmt.Printf("自动更新失败,请手动上传文件或重新执行程序！\n %v\n", err)
+		return
+	}
 	defer resp.Body.Close()
 
 	// 检查更新请求的状态码
@@ -75,14 +98,11 @@ func dataUpdate(fileName string, domain string, token string) {
 	}
 	fmt.Println("发起数据更新请求...........................................[\033[32mok\033[0m]")
 
-	// 等待一段时间以确保服务器处理更新请求
-	// time.Sleep(2 * time.Second)
-
 	// 构造读取URL
 	readUrlStr := fmt.Sprintf("https://%s/%s?token=%s&v=%d", domain, url.PathEscape(fileName), token, time.Now().Unix())
 
 	// 发送读取请求
-	resp, err = http.Get(readUrlStr)
+	resp, err = sendGetRequest(client, readUrlStr, 5) // 尝试重试5次
 	if err != nil {
 		fmt.Printf("发送读取请求时出错: %v\n", err)
 		return

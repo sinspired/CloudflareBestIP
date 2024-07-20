@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"bufio"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -111,7 +112,6 @@ func processCSV(filePath, outputFolder string, zipFiles *[]string) {
 	}
 	cleanIPs := []string{}
 	for i, ip := range ips {
-		
 		if !strings.Contains(orgs[i], "Alibaba") && !strings.Contains(orgs[i], "Cloudflare") {
 			cleanIPs = append(cleanIPs, ip)
 		}
@@ -135,7 +135,7 @@ func processCSV(filePath, outputFolder string, zipFiles *[]string) {
 	} else {
 		httpIPs, httpsIPs := []string{}, []string{}
 		for i, ip := range ips {
-			if !strings.Contains(orgs[i], "Alibaba") && !strings.Contains(orgs[i], "Cloudflare") {
+			if !strings.Contains(orgs[i], "Alibaba") && !strings.Contains(orgs[i], "Cloudflare") && ip != "" {
 				if protocols[i] == "http" {
 					httpIPs = append(httpIPs, fmt.Sprintf("%s:%s", ip, ports[i]))
 				} else {
@@ -170,14 +170,40 @@ func unique(slice []string) []string {
 }
 
 func writeToFile(filePath string, data []string) {
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	// 创建一个 map 用于存储唯一的行
+	lines := make(map[string]struct{})
+
+	// 如果文件存在，读取现有文件内容
+	file, err := os.OpenFile(filePath, os.O_RDONLY, 0o644)
+	if err == nil {
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text()) // 去除行首尾的空白字符
+			if line != "" {                           // 过滤空行
+				lines[line] = struct{}{}
+			}
+		}
+		file.Close() // 关闭文件
+	}
+
+	// 将新数据添加到 map 中
+	for _, line := range data {
+		line = strings.TrimSpace(line) // 去除行首尾的空白字符
+		if line != "" {                // 过滤空行
+			lines[line] = struct{}{}
+		}
+	}
+
+	// 以写模式打开文件（清空文件内容）
+	file, err = os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 	if err != nil {
 		fmt.Println("写入文件错误:", err)
 		return
 	}
-	defer file.Close()
+	defer file.Close() // 函数结束前关闭文件
 
-	for _, line := range data {
+	// 将唯一的行写入文件
+	for line := range lines {
 		_, err := file.WriteString(line + "\n")
 		if err != nil {
 			fmt.Println("写入文件错误:", err)

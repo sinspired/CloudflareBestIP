@@ -2,6 +2,9 @@ package main
 
 import (
 	"bufio" // 用于读取文件
+	// "flag"
+	"fmt"
+
 	// "fmt"
 	"log"       // 用于日志记录
 	"math/rand" // 用于生成随机数
@@ -11,13 +14,16 @@ import (
 	"time"      // 用于时间相关操作
 )
 
-const defaultInputFile = "ip.txt"
+const (
+	defaultInputFile  = "ip_CFv4IPDB.txt"
+	defaultOutputFile = "ip_CFv4IPDB_Parsed.txt"
+)
 
 var (
 	// TestAll 表示是否测试所有IP
 	TestAll = false
 	// IPFile 是包含IP范围的文件名
-	IPFile = defaultInputFile
+	IPFile string
 	IPText string
 )
 
@@ -155,7 +161,7 @@ func (r *IPRanges) chooseIPv6() {
 }
 
 // loadIPRanges 从文件或字符串中加载IP范围
-func loadIPRanges() []*net.IPAddr {
+func loadIPRanges(IPFile string) []*net.IPAddr {
 	ranges := newIPRanges()
 	if IPText != "" { // 从参数中获取IP段数据
 		IPs := strings.Split(IPText, ",")
@@ -197,11 +203,14 @@ func loadIPRanges() []*net.IPAddr {
 	return ranges.ips
 }
 
-func main() {
-	ips := loadIPRanges() // 获取IP列表
+func randomParseCIDR(IPFile string, parsedIPFile string) {
+	ips := loadIPRanges(IPFile) // 获取IP列表
+	if parsedIPFile == "" {
+		parsedIPFile = defaultOutputFile
+	}
 
 	// 创建文件
-	file, err := os.Create("ip_CFip.txt")
+	file, err := os.Create(parsedIPFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -215,4 +224,36 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	fmt.Printf("\033[90mCIDR地址 %s 已解析并随机主机名,保存为 %s。\n如未取得优选结果，可修改参数并再次解析。\033[0m\n", IPFile, parsedIPFile)
 }
+
+// func main() {
+// 	// 定义命令行参数
+// 	flag.Parse()
+// 	args := flag.Args()
+
+// 	// 检查是否提供了文件路径
+// 	if len(args) < 1 {
+// 		fmt.Println("请提供文件路径（相对路径或绝对路径）和解析结果文件名(如留空会自动生成)")
+// 		return
+// 	}
+
+// 	// 文件路径
+// 	IPFile := args[0]
+// 	parsedIPFile := args[1]
+// 	if IPFile == "" {
+// 		IPFile = defaultInputFile
+// 	}
+// 	if parsedIPFile != "" {
+// 		pasedName := strings.Split(parsedIPFile, ".")[0]
+// 		parts := strings.Split(pasedName, "_")
+// 		if len(parts) > 1 && parts[1] != "" {
+// 			parsedIPFile = parts[1] + "_Pased.txt"
+// 		} else {
+// 			parsedIPFile = pasedName + "_Pased.txt"
+// 		}
+
+// 	}
+
+// 	randomParseCIDR(IPFile, parsedIPFile)
+// }
