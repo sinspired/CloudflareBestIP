@@ -3,7 +3,6 @@ package task
 import (
 	"archive/zip"
 	"io"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strconv"
@@ -36,7 +35,7 @@ func UnZip2txtFile(zipPath string, outputPath string) ([]FileInfo, error) {
 			if err != nil {
 				return nil, err
 			}
-			content, err := ioutil.ReadAll(rc)
+			content, err := io.ReadAll(rc)
 			rc.Close()
 			if err != nil {
 				return nil, err

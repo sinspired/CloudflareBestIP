@@ -74,10 +74,10 @@ func dataUpdate(fileName string, domain string, token string) {
 	// 设置HTTP客户端，启用Keep-Alive和重试逻辑
 	client := &http.Client{
 		Transport: &http.Transport{
-			MaxIdleConns:        10,                      // 最大空闲连接数
-			IdleConnTimeout:     30 * time.Second,        // 空闲连接的超时时间
-			MaxIdleConnsPerHost: 2,                       // 每个主机的最大空闲连接数
-			DisableKeepAlives:   false, // 启用 Keep-Alive
+			MaxIdleConns:        10,               // 最大空闲连接数
+			IdleConnTimeout:     30 * time.Second, // 空闲连接的超时时间
+			MaxIdleConnsPerHost: 2,                // 每个主机的最大空闲连接数
+			DisableKeepAlives:   false,            // 启用 Keep-Alive
 			// TLSHandshakeTimeout: 10 * time.Second,
 		},
 		Timeout: time.Second * 30, // 设置单次请求超时时间为30秒
@@ -96,7 +96,8 @@ func dataUpdate(fileName string, domain string, token string) {
 		fmt.Printf("更新请求失败，状态码: %d\n", resp.StatusCode)
 		return
 	}
-	fmt.Println("发起数据更新请求...........................................[\033[32mok\033[0m]")
+	repeatCount := baseLens - len("发起数据更新请求[ok]")
+	fmt.Printf("发起数据更新请求%s[\033[32mok\033[0m]\n", strings.Repeat(".", repeatCount))
 
 	// 构造读取URL
 	readUrlStr := fmt.Sprintf("https://%s/%s?token=%s&v=%d", domain, url.PathEscape(fileName), token, time.Now().Unix())
@@ -131,12 +132,12 @@ func dataUpdate(fileName string, domain string, token string) {
 
 	// 根据比较结果判断是否成功
 	UrlStr := fmt.Sprintf("https://%s/%s?token=%s", domain, url.PathEscape(fileName), token)
-
+	repeatCount = baseLens - len("验证数据更新结果[ok]")
 	if equ {
-		fmt.Println("验证数据更新结果...........................................[\033[32mok\033[0m]\n")
-		fmt.Println(string(responseContent))
-		fmt.Printf("\n\033[90m优选IP\033[0m \033[90;4m%s\033[0m \033[90m已成功更新至:\033[0m\n\033[34m%s\033[0m\n", fileName, UrlStr)
+		fmt.Printf("验证数据更新结果%s[\033[32mok\033[0m]\n\n", strings.Repeat(".", repeatCount))
+		// fmt.Println(string(responseContent))
+		fmt.Printf("\n\033[90m优选IP\033[0m \033[90;4m%s\033[0m \033[90m已成功更新 %d 条数据至:\033[0m\n\033[34m%s\033[0m\n", fileName, countQualified,UrlStr)
 	} else {
-		fmt.Println("验证数据更新结果...........................................[\033[31mX\033[0m]")
+		fmt.Printf("验证数据更新结果%s[\033[31mX\033[0m]\n", strings.Repeat(".", repeatCount))
 	}
 }
