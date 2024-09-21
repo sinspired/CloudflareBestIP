@@ -25,7 +25,7 @@ jobs:
       env:
         GOOS: windows
         GOARCH: amd64
-      run: go build -o speedtest.exe
+      run: go build -o bestipTest.exe
     
     - name: Get tag description
       id: tag_description
@@ -58,8 +58,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./speedtest.exe
-        asset_name: speedtest.exe
+        asset_path: ./bestipTest.exe
+        asset_name: bestipTest.exe
         asset_content_type: application/vnd.microsoft.portable-executable
 
 
