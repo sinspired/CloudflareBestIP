@@ -1,58 +1,51 @@
 name: Build and Release
+
 on:
   push:
     tags:
       - 'v*'
 
 jobs:
+
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - name: Cache pip
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install pyinstaller
-      - name: Build executable
-        run: pyinstaller --onefile --name vpngateclient.exe VpngateClient/VpngateClient.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: vpngateclient-exe
-          path: dist/vpngateclient.exe
-
-  release:
-    needs: build
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Get latest tag
-        id: get_latest_tag
-        uses: actions-ecosystem/action-get-latest-tag@v1
-      
-      - name: Set output using environment file
-        run: echo "LATEST_TAG=${{ steps.get_latest_tag.outputs.tag }}" >> $GITHUB_ENV
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: vpngateclient-exe
-          
-      - name: Create Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: softprops/action-gh-release@v1
-        with:
-          files: vpngateclient.exe
-          body: Release of vpngateclient
-          tag_name: ${{ env.LATEST_TAG }} 
+    - uses: actions/checkout@v2
+    
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.22
+        
+    - name: Install dependencies
+      run: |
+        go mod tidy
+        
+    - name: Build for Windows
+      env:
+        GOOS: windows
+        GOARCH: amd64
+      run: |  
+        go build -o speedtest.exe
+        
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+        
+    - name: Upload Windows Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./speedtest.exe
+        asset_name: speedtest.exe
+        asset_content_type: application/vnd.microsoft.portable-executable
