@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bufio"
 	"encoding/csv"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -19,8 +20,25 @@ var (
 )
 
 func main() {
-	// 接受文件夹参数
-	folder := "FofaCSV"
+	flag.Parse()
+	args := flag.Args()
+
+	var folder string
+	defaultFolderPath := "FofaCSV"
+
+	// 检查是否提供了文件夹路径
+	if len(args) < 1 {
+		if _, err := os.Stat(defaultFolderPath); os.IsNotExist(err) {
+			// 如果默认文件夹不存在
+			fmt.Println("请提供文件夹路径（相对路径或绝对路径）和导出文件夹")
+			return
+		}
+		folder = defaultFolderPath
+	} else {
+		inputFolderPath := args[0]
+		folder = inputFolderPath
+	}
+
 	outputFolder := folder + "Output"
 	os.Mkdir(outputFolder, 0o755)
 
@@ -78,7 +96,7 @@ func processCSV(filePath, outputFolder string, zipFiles *[]string) {
 	}
 
 	// 获取各列的索引
-	var ipIndex, portIndex, countryIndex, protocolIndex, orgIndex int
+	var ipIndex, portIndex, countryIndex, protocolIndex, asnIndex, orgIndex int
 	for i, header := range headers {
 		switch header {
 		case "ip":
@@ -91,10 +109,12 @@ func processCSV(filePath, outputFolder string, zipFiles *[]string) {
 			protocolIndex = i
 		case "as_organization":
 			orgIndex = i
+		case "as_number":
+			asnIndex = i
 		}
 	}
 
-	var ips, ports, countries, protocols, orgs []string
+	var ips, ports, countries, protocols,asns, orgs []string
 	for {
 		record, err := reader.Read()
 		if err == io.EOF {
@@ -108,11 +128,12 @@ func processCSV(filePath, outputFolder string, zipFiles *[]string) {
 		ports = append(ports, record[portIndex])
 		countries = append(countries, record[countryIndex])
 		protocols = append(protocols, record[protocolIndex])
+		asns =append(asns, record[asnIndex])
 		orgs = append(orgs, record[orgIndex])
 	}
 	cleanIPs := []string{}
 	for i, ip := range ips {
-		if !strings.Contains(orgs[i], "Alibaba") && !strings.Contains(orgs[i], "Cloudflare") {
+		if !strings.Contains(asns[i], "45102") && !strings.Contains(orgs[i], "Cloudflare") {
 			cleanIPs = append(cleanIPs, ip)
 		}
 	}
@@ -135,7 +156,7 @@ func processCSV(filePath, outputFolder string, zipFiles *[]string) {
 	} else {
 		httpIPs, httpsIPs := []string{}, []string{}
 		for i, ip := range ips {
-			if !strings.Contains(orgs[i], "Alibaba") && !strings.Contains(orgs[i], "Cloudflare") && ip != "" {
+			if !strings.Contains(asns[i], "45102") && !strings.Contains(orgs[i], "Cloudflare") && ip != "" {
 				if protocols[i] == "http" {
 					httpIPs = append(httpIPs, fmt.Sprintf("%s:%s", ip, ports[i]))
 				} else {
@@ -260,6 +281,10 @@ func addFileToZip(zipWriter *zip.Writer, filename string) error {
 }
 
 func copyFile(src, dst string) {
+	if _, err := os.Stat(src); os.IsNotExist(err) {
+		// 如不存在，取消复制
+		return
+	}
 	sourceFile, err := os.Open(src)
 	if err != nil {
 		fmt.Println("复制文件错误:", err)

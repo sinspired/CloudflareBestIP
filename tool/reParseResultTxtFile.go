@@ -134,16 +134,30 @@ func readIPResults(File string) ([]string, error) {
 	}
 	defer file.Close()
 
-	var ipPortWithTag []string
+	var (
+		ipPortWithTag []string
+		ipPort        string
+		ipTag         = strings.Split(File, ".")[0]
+	)
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		ipAddr := scanner.Text()
-		if len(ipAddr) < 7 {
+		if len(ipAddr) < 7 || (strings.Count(ipAddr, ".") < 3 && strings.Count(ipAddr, ":") < 3) {
 			continue
 		}
-		ipPort := strings.Split(ipAddr, "#")[0]
-		ipTag := strings.Split(ipAddr, "丨")[1]
+		if strings.Count(ipAddr, "#") >= 1 {
+			ipPort = strings.Split(ipAddr, "#")[0]
+		} else if strings.Count(ipAddr, ",") >= 1 {
+			ip := strings.Split(ipAddr, ",")[0]
+			port := strings.Split(ipAddr, ",")[1]
+			ipPort = net.JoinHostPort(ip, port)
+		}
+
+		if strings.Count(ipAddr, "丨") > 0 {
+			ipTag = strings.Split(ipAddr, "丨")[1]
+		}
+
 		ipPortWithTag = append(ipPortWithTag, ipPort+"丨"+ipTag)
 	}
 
@@ -282,7 +296,6 @@ func (info *IPInfo) getOrgNameAbbr() string {
 	return strings.ToUpper(org)
 }
 
-
 func reParseResultTxtFile(ipFile string, apiKey string) {
 	// 定义命令行参数
 	flag.Parse()
@@ -309,7 +322,7 @@ func reParseResultTxtFile(ipFile string, apiKey string) {
 	results := make(chan Result, len(ipPortWithTag))
 
 	var wg sync.WaitGroup
-	fmt.Println("\033[90m正在获取ip信息并处理，请稍等！\033[0m")
+	fmt.Println("\033[90m正在查询ip信息并处理，请稍等！\033[0m")
 
 	for i, ipPortWithTag := range ipPortWithTag {
 		wg.Add(1)
@@ -321,8 +334,15 @@ func reParseResultTxtFile(ipFile string, apiKey string) {
 
 			ipPort := strings.Split(ipPortWithTag, "丨")[0]
 			tag := strings.Split(ipPortWithTag, "丨")[1]
-			ip := strings.Split(ipPort, ":")[0]
-			port := strings.Split(ipPort, ":")[1]
+			var ip, port string
+			if len(strings.Split(ipPort, ":")) <= 1 {
+				ip = ipPort
+				port = "443"
+			} else {
+				ip = strings.Split(ipPort, ":")[0]
+				port = strings.Split(ipPort, ":")[1]
+			}
+
 			dataCenterCoCo := checkDataCenterCoco(ip, port)
 
 			info, err := getIPInfo(ip, apiKey)
@@ -385,7 +405,6 @@ func reParseResultTxtFile(ipFile string, apiKey string) {
 	}
 	fmt.Println("+--------------------------------------------------------+")
 }
-
 
 func checkDataCenterCoco(ip string, port string) string {
 	client := http.Client{
@@ -467,13 +486,13 @@ func isApiKeyNotExceed(apiKey string) bool {
 }
 
 func main() {
-	apiKey := "" // 替换为你的API密钥
-	// // apiKey := ""
-	// if isApiKeyNotExceed(apiKey) {
-	// 	apiKey = ""
-	// } else {
-	// 	apiKey = ""
-	// }
+	// apiKey := "" // 替换为你的API密钥
+	apiKey := "085820d1fef7d000"
+	if isApiKeyNotExceed(apiKey) {
+		apiKey = "085820d1fef7d000"
+	} else {
+		apiKey = "7bfde515e7f4c845"
+	}
 	readLocationData()
 	fmt.Print("\033[2J\033[0;0H") // 清空屏幕
 	reParseResultTxtFile("", apiKey)

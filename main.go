@@ -32,27 +32,27 @@ import (
 
 // 定义终端命令行变量
 var (
-	DirectIP         = flag.String("ip", "", "直接检测ip地址")                       // IP地址名称
-	File             = flag.String("file", "txt.zip", "IP地址文件名称(*.txt或*.zip)") // IP地址文件名称
-	outFile          = flag.String("outfile", "result.csv", "输出文件名称(自动设置)")    // 输出文件名称
-	defaultPort      = flag.Int("port", 443, "默认端口")                           // 端口
-	maxThreads       = flag.Int("max", 200, "并发请求最大协程数")                       // 最大协程数
-	speedTestThreads = flag.Int("speedtest", 5, "下载测速协程数量,设为0禁用测速")            // 下载测速协程数量
-	speedLimit       = flag.Float64("speedlimit", 5, "最低下载速度(MB/s)")           // 最低下载速度
-	speedTestURL     = flag.String("url", "speed.cloudflare.com/200000000", "测速文件地址") // 测速文件地址
-	// speedTestURL     = flag.String("url", "speed.cloudflare.com/__down?bytes=500000000", "测速文件地址") // 测速文件地址
-	enableTLS        = flag.Bool("tls", true, "是否启用TLS")                                // TLS是否启用
-	multipleNum      = flag.Float64("mulnum", 1, "多协程测速造成测速不准，可进行倍数补偿")                 // speedTest比较大时修改
-	tcpLimit         = flag.Int("tcplimit", 2000, "TCP最大延迟(ms)")                        // TCP最大延迟(ms)
-	httpLimit        = flag.Int("httplimit", 9999, "HTTP最大延迟(ms)")                      // HTTP最大延迟(ms)
-	countryCodes     = flag.String("country", "", "国家代码(US,SG,JP,DE...)，以逗号分隔，留空时检测所有") // 国家代码数组
-	ExcludedCounties = flag.String("not", "", "排除的国家代码(US,SG,JP,DE...)")                // 排除的国家代码数组
-	DownloadipLib    = flag.Bool("iplib", false, "为true时检查ip库中的文件并依次下载")                // 自动下载一些知名的反代IP列表
+	DirectIP         = flag.String("ip", "", "直接检测ip地址")                                           // IP地址名称
+	File             = flag.String("file", "txt.zip", "IP地址文件名称(*.txt或*.zip)")                     // IP地址文件名称
+	outFile          = flag.String("outfile", "result.csv", "输出文件名称(自动设置)")                        // 输出文件名称
+	defaultPort      = flag.Int("port", 443, "默认端口")                                               // 端口
+	maxThreads       = flag.Int("max", 200, "并发请求最大协程数")                                           // 最大协程数
+	speedTestThreads = flag.Int("speedtest", 5, "下载测速协程数量,设为0禁用测速")                                // 下载测速协程数量
+	speedLimit       = flag.Float64("speedlimit", 5, "最低下载速度(MB/s)")                               // 最低下载速度
+	speedTestURL     = flag.String("url", "speed.cloudflare.com/__down?bytes=200000000", "测速文件地址") // 测速文件地址
+	enableTLS        = flag.Bool("tls", true, "是否启用TLS")                                           // TLS是否启用
+	multipleNum      = flag.Float64("mulnum", 1, "多协程测速造成测速不准，可进行倍数补偿")                            // speedTest比较大时修改
+	tcpLimit         = flag.Int("tcplimit", 2000, "TCP最大延迟(ms)")                                   // TCP最大延迟(ms)
+	httpLimit        = flag.Int("httplimit", 9999, "HTTP最大延迟(ms)")                                 // HTTP最大延迟(ms)
+	countryCodes     = flag.String("country", "", "国家代码(US,SG,JP,DE...)，以逗号分隔，留空时检测所有")            // 国家代码数组
+	ExcludedCounties = flag.String("not", "", "排除的国家代码(US,SG,JP,DE...)")                           // 排除的国家代码数组
+	DownloadipLib    = flag.Bool("iplib", false, "为true时检查ip库中的文件并依次下载")                           // 自动下载一些知名的反代IP列表
 	Domain           = flag.String("domain", "", "上传地址，默认为空,用Text2KV项目建立的简易文件存储storage.example.com")
 	Token            = flag.String("token", "", "上传地址的token，默认为空")
 	RequestNum       = flag.Int("num", 6, "测速结果数量") // 测速结果数量
 	DownloadTestAll  = flag.Bool("dlall", false, "为true对有效满足延迟检测的有效ip测速，可能需要很长时间")
 	IPInfoApiKey     = flag.String("api", "", "ip信息查询api，免费申请，api.ipapi.is，如留空则使用免费接口")
+	CheckGPT         = flag.Bool("gpt", false, "控制是否要检测可用于chatgpt的PROYIP,须使用非CloudFlare平台的代理")
 )
 
 var ipLibs = map[string]string{
@@ -73,7 +73,6 @@ const (
 )
 
 var (
-	// requestURL = "st.notime.icu/cdn-cgi/trace" // 请求trace URL,自建的貌似会造成数据中心识别错误
 	requestURL       = "speed.cloudflare.com/cdn-cgi/trace"     // 请求trace URL
 	locationsJsonUrl = "https://speed.cloudflare.com/locations" // location.json下载 URL
 
@@ -91,6 +90,7 @@ var (
 	totalResultChan     []latencyTestResult // 存储延迟测速结果
 	countQualified      int                 // 存储合格ip数量
 	baseLens            int                 // 命令行输出基准长度
+	apiKey              string
 )
 
 // 延迟检测结果结构体
@@ -521,20 +521,21 @@ func logWithProgress(countProcessed, total int) {
 	if total != 0 {
 		percentage := float64(countProcessed) / float64(total) * 100
 		// barLength := 29 // 进度条长度
-		baseLens = len("-IP 64.110.104.30   端口 443   位置:JP KIX 延迟 158 ms [ 489 ms ]")
+		// baseLens = len("-IP 64.110.104.30   端口 443   位置:JP KIX 延迟 158 ms [ 489 ms ]")
+		baseLens = len(fmt.Sprintf("-IP %-15s 端口 %-5d 位置:%2s %3s 延迟 %3d ms [ %-3d ms ]\n", "255.255.255.255", 65001, "US", "SJX", 999, 999))
 		totalCountLen := len(strconv.Itoa(totalIPs))
 		alivelen := (totalCountLen - 1)
 		if (totalCountLen-2)*2+1 >= (totalCountLen - 1) {
 			alivelen = (totalCountLen - 2) * 2
 		}
-		barLength := baseLens - len("进度") - len("100.00% / 存活 IP: /") - totalCountLen*2 - alivelen - 4
+		barLength := baseLens - len("进度") - len("100.00% / 存活 IP: /") - totalCountLen*2 - alivelen - 3
 		progress := int(percentage / 100 * float64(barLength))
 
 		// 构建进度条
 		bar := fmt.Sprintf("\033[32m%s\033[0m%s", strings.Repeat("■", progress), strings.Repeat("▣", barLength-progress))
 		// 并发检测进度显示
 
-		fmt.Printf("\r进度%s\033[1;32m%6.2f%%\033[0m \033[90m%d\033[0m/\033[90m%d\033[0m ", bar, percentage, countProcessed, total)
+		fmt.Printf("\r进度%s\033[1;32m%6.2f%%\033[0m \033[90m%d\033[0m/\033[90m%d \033[0m", bar, percentage, countProcessed, total)
 	}
 }
 
@@ -756,6 +757,10 @@ func readIPs(File string) ([]string, error) {
 		if len(ipAddr) < 7 {
 			continue
 		}
+		// 如果是碧海的ip库，把ip和端口之间的制表符替换为":"以便后续代码处理
+		if strings.Count(ipAddr, "\t") == 1 {
+			ipAddr = strings.Replace(ipAddr, "\t", ":", 1)
+		}
 		// 判断是否为 CIDR 格式的 IP 地址
 		if strings.Contains(ipAddr, "/") && strings.Count(ipAddr, ":") != 1 && strings.Count(ipAddr, "#") != 1 {
 			ip, ipNet, err := net.ParseCIDR(ipAddr)
@@ -779,7 +784,7 @@ func readIPs(File string) ([]string, error) {
 					portStr = strings.TrimSpace(portStr)
 					port, err := strconv.Atoi(portStr)
 					if err != nil {
-						fmt.Println("%s端口转换错误:", ipAddr, err)
+						fmt.Println("%s端口转换错误:%v", ipAddr, err)
 						continue
 					}
 					// ipMap[ip] = struct{}{}
@@ -790,7 +795,7 @@ func readIPs(File string) ([]string, error) {
 					port, err := strconv.Atoi(portStr)
 					if err != nil {
 						fmt.Println(ipAddr)
-						fmt.Println("%s端口转换错误:", ipAddr, err)
+						fmt.Println("%s端口转换错误:%v", ipAddr, err)
 						continue
 					}
 					// ipMap[ip] = struct{}{}
@@ -823,6 +828,58 @@ func inc(ip net.IP) {
 	}
 }
 
+// 检测反代ip是否被chatgpt拉黑
+func checkGptProxy() {
+	println("检测反代ip是否可用于chatgpt")
+	var wg sync.WaitGroup
+	var count int32
+	var gptProxyAlive int
+
+	port := "443"
+
+	// 创建一个长度为输入数据长度的通道
+	var resultGptAlive []string
+	thread := make(chan struct{}, *maxThreads)
+	total := len(totalResultChan)
+
+	wg.Add(len(totalResultChan))
+	for _, res := range totalResultChan {
+		thread <- struct{}{}
+		go func(res latencyTestResult) {
+			defer func() {
+				<-thread
+				wg.Done()
+				// countProcessed++ // 已处理 IP 数计数器
+				atomic.AddInt32(&count, 1) // 使用原子操作增加计数器
+				countProcessedInt := int(atomic.LoadInt32(&count))
+				// 调用logWithProgress 函数输出进度信息
+				logWithProgress(countProcessedInt, total)
+				fmt.Printf("存活 IP: \033[1;32;5m%d\033[0m\r", gptProxyAlive)
+			}()
+
+			gptAlive := task.CheckGptProxy(res.ip, port)
+			if gptAlive {
+				resultGptAlive = append(resultGptAlive, res.ip)
+				gptProxyAlive++
+				println("找到一个哦！")
+			} else {
+				println("不合格")
+			}
+
+		}(res)
+	}
+	wg.Wait()
+	if len(resultGptAlive) > 0 {
+		for _, ip := range resultGptAlive {
+			println("可以访问chatgpt的ip:%s", ip)
+		}
+	} else {
+		println("没有可以访问chatgpt的proxyip")
+	}
+
+	pause()
+}
+
 // 下载测速函数
 func getDownloadSpeed(ip string, port int, enableTLS bool, latency string, tcplatency string, country string) float64 {
 	var protocol string
@@ -836,7 +893,7 @@ func getDownloadSpeed(ip string, port int, enableTLS bool, latency string, tcpla
 	// Create request
 	req, err := http.NewRequest("GET", fullURL, nil)
 	if err != nil {
-		fmt.Printf("-IP %-15s 端口 %-5s 国家 %s \033[9;31m测速无效1\033[0m%s\n", ip, strconv.Itoa(port), country, strings.Repeat(" ", 15))
+		fmt.Printf("-IP %-15s 端口 %-5s 国家 %s \033[9;31m测速无效1\033[0m%s\n", ip, strconv.Itoa(port), country, strings.Repeat(" ", 18))
 		return 0.0
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36")
@@ -866,7 +923,7 @@ func getDownloadSpeed(ip string, port int, enableTLS bool, latency string, tcpla
 	// Send request
 	response, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("-IP %-15s 端口 %-5s 国家 %s \033[9;31m测速无效\033[0m%s\n", ip, strconv.Itoa(port), country, strings.Repeat(" ", 15))
+		fmt.Printf("-IP %-15s 端口 %-5s 国家 %s \033[9;31m测速无效\033[0m%s\n", ip, strconv.Itoa(port), country, strings.Repeat(" ", 18))
 		return 0.0
 	}
 	defer response.Body.Close()
@@ -926,13 +983,13 @@ func getDownloadSpeed(ip string, port int, enableTLS bool, latency string, tcpla
 		// 输出结果
 		if speed >= *speedLimit/2 {
 			// 速度达到限速一半才在命令行输出
-			fmt.Printf("-IP %-15s 端口 %-5s 国家 %2s 延迟 %3s ms 速度 %4.1f MB/s%s\n", ip, strconv.Itoa(port), country, tcplatency, speed, strings.Repeat(" ", 0))
+			fmt.Printf("-IP %-15s 端口 %-5s 国家 %2s 延迟 %3s ms 速度 %4.1f MB/s%s\n", ip, strconv.Itoa(port), country, tcplatency, speed, strings.Repeat(" ", 1))
 		}
 		return speed
 	} else {
 		// 多协程测速会有速度损失，加以补偿
 		xspeed := speed * (*multipleNum)
-		fmt.Printf("-IP %-15s 端口 %-5s 延迟 %3s ms 速度 %4.1f MB/s, %.0f×%2.1f%s\n", ip, strconv.Itoa(port), tcplatency, xspeed, *multipleNum, speed, strings.Repeat(" ", 0))
+		fmt.Printf("-IP %-15s 端口 %-5s 延迟 %3s ms 速度 %4.1f MB/s, %.0f×%2.1f%s\n", ip, strconv.Itoa(port), tcplatency, xspeed, *multipleNum, speed, strings.Repeat(" ", 1))
 		return xspeed
 	}
 }
@@ -1150,7 +1207,7 @@ func handleQualifiedResults(results []speedTestResult) {
 		writer.Write([]string{"IP地址", "端口", "TLS", "数据中心", "地区", "国家", "城市", "延迟(ms)"})
 	}
 
-	fmt.Printf("\n\n优选ip,下载速度高于 \033[32m%2.1f\033[0m MB/s，测速结果：\n", *speedLimit)
+	fmt.Println("\n\n\033[90m正在查询优选ip的ASN信息并处理，请稍等！\033[0m")
 
 	// 创建并发协程
 	var wg sync.WaitGroup
@@ -1166,6 +1223,18 @@ func handleQualifiedResults(results []speedTestResult) {
 	index := 0
 	resultsChan := make(chan resultWithIPTagByIndex)
 
+	// 判断 apiKey 是否有效
+	if *IPInfoApiKey != "" {
+		apiKeys := *IPInfoApiKey
+		apiKeysArray := strings.Split(apiKeys, ",")
+		for _, key := range apiKeysArray {
+			if task.IsApiKeyNotExceed(key) {
+				apiKey = key
+				break
+			}
+		}
+	}
+
 	for _, res := range results {
 		if *speedTestThreads > 0 && res.downloadSpeed >= float64(*speedLimit) && index < requestNum {
 			index++
@@ -1179,6 +1248,9 @@ func handleQualifiedResults(results []speedTestResult) {
 				suffixName := strings.Split(OutFileName, "_")[1]
 				dataCenterCountry := res.country
 				ipTag := getIPTag(res.ip, res.port, dataCenterCountry, suffixName)
+				if ipTag == "" {
+					ipTag = res.country
+				}
 				// 添加索引以便不打乱顺序
 				resultsChan <- resultWithIPTagByIndex{index - 1, resultWithIPTag{res, ipTag}}
 			}(index, res)
@@ -1196,6 +1268,7 @@ func handleQualifiedResults(results []speedTestResult) {
 	for result := range resultsChan {
 		resultSlice[result.index] = result.resultWithIPTag
 	}
+	fmt.Printf("\n优选ip下载速度高于 \033[32m%2.1f\033[0m MB/s，测速结果：\n", *speedLimit)
 	for _, result := range resultSlice {
 		if result.result.ip != "" {
 			writer.Write([]string{result.result.ip, strconv.Itoa(result.result.port), strconv.FormatBool(*enableTLS), result.result.dataCenter, result.result.region, result.ipTag, result.result.city, result.result.latency, result.result.tcpDuration, fmt.Sprintf("%.1f", result.result.downloadSpeed)})
@@ -1262,20 +1335,11 @@ func tcping(ip string, port int) (bool, time.Duration) {
 }
 
 func getIPTag(ip string, port int, dataCenterCoCo string, tag string) string {
-	var apiKey string
-	apiKeys := *IPInfoApiKey // 填写你的apiKey
-	apiKeysArray := strings.Split(apiKeys, ",")
-	for _, key := range apiKeysArray {
-		if task.IsApiKeyNotExceed(key) {
-			apiKey = key
-			break
-		}
-	}
 	// 通过api接口获取ip信息
 	info, err := task.GetIPInfo(ip, apiKey)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return "获取错误"
+		return ""
 	}
 
 	// 判断原生ip或广播ip
@@ -1293,7 +1357,7 @@ func getIPTag(ip string, port int, dataCenterCoCo string, tag string) string {
 	ipType, err := info.GetIPType()
 	if err != nil {
 		fmt.Println("Error:", err)
-		return "获取错误"
+		return ""
 	}
 
 	// 根据数据中心地址和ip位置是否相同，设置显示信息
@@ -1330,9 +1394,13 @@ func main() {
 	// 下载locations.json
 	locationsJsonDownload()
 
-	// 网络环境检测，如网络不正常自动退出
-	if !autoNetworkDetection() {
-		return
+	// 如果不检测能访问chatgpt的proxyip，则执行网络检查
+	// 检测proxyip必须可以访问外网
+	if !*CheckGPT {
+		// 网络环境检测，如网络不正常自动退出
+		if !autoNetworkDetection() {
+			return
+		}
 	}
 
 	// 存储国家代码到数组中
@@ -1399,7 +1467,7 @@ func main() {
 
 		totalIPs = len(DirectIPs)
 		for _, ipPort := range DirectIPs {
-			if len(strings.Split(ipPort, ":")) > 1 {
+			if len(strings.Split(ipPort, ":")) == 2 {
 				port, _ := strconv.Atoi(strings.Split(ipPort, ":")[1])
 				ipPort := strings.Fields(ipPort)
 				delayedDetectionIPs(ipPort, *enableTLS, port)
@@ -1411,6 +1479,9 @@ func main() {
 		}
 
 		pause()
+		if *CheckGPT {
+			checkGptProxy()
+		}
 		downloadSpeedTest()
 		os.Exit(0)
 	} else {
@@ -1436,12 +1507,18 @@ func main() {
 		if fileInfos != nil {
 			// ASN 格式
 			processASNZipedFiles(fileInfos)
+			if *CheckGPT {
+				checkGptProxy()
+			}
 			// 下载测速并保存结果
 			downloadSpeedTest()
 		} else {
 			// 非 ASN 格式，使用合并后的文件
 			task.UnZip2txtFile(*File, UnZipedFile)
 			processIPListFile(UnZipedFile)
+			if *CheckGPT {
+				checkGptProxy()
+			}
 			// 下载测速并保存结果
 			downloadSpeedTest()
 		}
@@ -1449,7 +1526,7 @@ func main() {
 
 		if strings.ToLower(*File) == "ip_cfv4ipdb.txt" {
 			parsedFile := "ip_CFv4IPDB_Parsed.txt"
-			randomParseCIDR(*File, parsedFile)
+			task.RandomParseCIDR(*File, parsedFile)
 			*File = parsedFile
 			// 设置测速结果文件名
 			resetOutFileName(*File)
@@ -1458,7 +1535,7 @@ func main() {
 		if strings.Contains(strings.ToLower(*File), "cidr") {
 			pasedName := strings.Split(*File, ".")[0]
 			parsedFile := pasedName + "_Pased.txt"
-			randomParseCIDR(*File, parsedFile)
+			task.RandomParseCIDR(*File, parsedFile)
 			*File = parsedFile
 			// 设置测速结果文件名
 			resetOutFileName(*File)
@@ -1467,6 +1544,9 @@ func main() {
 
 		// 处理非 ZIP 文件
 		processIPListFile(*File)
+		if *CheckGPT {
+			checkGptProxy()
+		}
 		// 下载测速并保存结果
 		downloadSpeedTest()
 	}
@@ -1476,15 +1556,39 @@ func main() {
 	switch {
 	case *Domain != "" && *Token != "" && countQualified > 0:
 		switch strings.ToLower(*outFile) {
-		case "result_baipiaoge.csv", "result_proxyipdb.csv", "result_cfv4ipdb.csv", "result_scanner.csv", "result_selected.csv", "result_fofa.csv", "result_fofas.csv","result_bihaicfip.csv","result_bihaicloudcfip.csv":
-			// case "txt.zip", "ip_proxyipdb.txt", "ip_cfv4ipdb.txt", "ip_scanner.txt", "ip_selected.txt", "fofa.zip", "ip_proxyipdb", "ip_fofa.txt", "fofas.zip":
-			dataUpdate(*outFile, *Domain, *Token)
+		case "result_baipiaoge.csv", "result_proxyipdb.csv", "result_cfv4ipdb.csv", "result_scanner.csv", "result_selected.csv", "result_fofa.csv", "result_fofas.csv", "result_bihaicfip.csv", "result_bihaicloudcfip.csv":
+			fmt.Printf("\n> 优质ip数量：\033[32m%d\033[0m ,是否要上传数据？(y/n):", countQualified)
+			// 创建一个通道用于接收用户输入
+			inputChan := make(chan string, 1)
+
+			// 启动一个 goroutine 来获取用户输入
+			go func() {
+				var input string
+				fmt.Scanln(&input)
+				input = strings.TrimSpace(input)
+				inputChan <- input
+			}()
+
+			// 等待用户输入或超时
+			select {
+			case input := <-inputChan:
+				if input == "y" {
+					task.DataUpdate(*outFile, *Domain, *Token, baseLens, countQualified)
+				} else if input == "n" {
+					fmt.Println("退出程序")
+				} else {
+					fmt.Println("退出程序")
+				}
+			case <-time.After(5 * time.Second):
+				task.DataUpdate(*outFile, *Domain, *Token, baseLens, countQualified)
+			}
+
 		default:
 			fmt.Printf("\n> 优质ip数量：\033[32m%d\033[0m ,是否要上传数据？(y/n):", countQualified)
 			input, _ := reader.ReadString('\n')
 			input = strings.TrimSpace(input)
 			if input == "y" {
-				dataUpdate(*outFile, *Domain, *Token)
+				task.DataUpdate(*outFile, *Domain, *Token, baseLens, countQualified)
 			} else {
 				fmt.Println("退出程序")
 			}
@@ -1505,7 +1609,7 @@ func main() {
 				*Token = strings.TrimSpace(token)
 			}
 			if *Domain != "" && *Token != "" {
-				dataUpdate(*outFile, *Domain, *Token)
+				task.DataUpdate(*outFile, *Domain, *Token, baseLens, countQualified)
 			} else {
 				fmt.Println("\033[31m主机名或token缺失，本次更新取消!\033[0m")
 				os.Exit(0)

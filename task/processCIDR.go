@@ -1,4 +1,4 @@
-package main
+package task
 
 import (
 	"bufio" // 用于读取文件
@@ -203,7 +203,7 @@ func loadIPRanges(IPFile string) []*net.IPAddr {
 	return ranges.ips
 }
 
-func randomParseCIDR(IPFile string, parsedIPFile string) {
+func RandomParseCIDR(IPFile string, parsedIPFile string) {
 	ips := loadIPRanges(IPFile) // 获取IP列表
 	if parsedIPFile == "" {
 		parsedIPFile = defaultOutputFile

@@ -81,5 +81,5 @@ func main() {
 		return
 	}
 
-	fmt.Println("合并完成，结果保存在 'ip_Scanner.txt'")
+	fmt.Printf("合并完成，结果保存在 %s\n", mergedTxtFile)
 }

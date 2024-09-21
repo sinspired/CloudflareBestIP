@@ -1,4 +1,4 @@
-package main
+package task
 
 import (
 	"bufio"
@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 )
+
+var baseLens = len("-IP 64.110.104.30   端口 443   位置:JP KIX 延迟 158 ms [ 489 ms ]")
 
 // func main() {
 // 	dataUpdate("result_test.csv", "example.com", "your_token")
@@ -41,7 +43,7 @@ func sendGetRequest(client *http.Client, urlStr string, maxRetries int) (*http.R
 }
 
 // 更新数据
-func dataUpdate(fileName string, domain string, token string) {
+func DataUpdate(fileName string, domain string, token string,baseLens int,countQualified int) {
 	// 清除输出内容
 	fmt.Print("\033[2J\033[0;0H")
 	fmt.Printf("优选IP文件 %s 正在上传到 %s\n", fileName, domain)
@@ -136,7 +138,7 @@ func dataUpdate(fileName string, domain string, token string) {
 	if equ {
 		fmt.Printf("验证数据更新结果%s[\033[32mok\033[0m]\n\n", strings.Repeat(".", repeatCount))
 		// fmt.Println(string(responseContent))
-		fmt.Printf("\n\033[90m优选IP\033[0m \033[90;4m%s\033[0m \033[90m已成功更新 %d 条数据至:\033[0m\n\033[34m%s\033[0m\n", fileName, countQualified,UrlStr)
+		fmt.Printf("\n\033[90m优选IP\033[0m \033[90;4m%s\033[0m \033[90m已成功更新 %d 条数据至:\033[0m\n\033[34m%s\033[0m\n", fileName, countQualified, UrlStr)
 	} else {
 		fmt.Printf("验证数据更新结果%s[\033[31mX\033[0m]\n", strings.Repeat(".", repeatCount))
 	}

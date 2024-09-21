@@ -25,24 +25,24 @@ go build -o BestipTest.exe main.go update.go
 **CloudflareBestIP** 可以接受以下参数：
 
 * -file IP地址文件名称(*.txt或*.zip) (default "txt.zip")
-* -countries 国家代码(US,SG,JP,DE...)，以逗号分隔，留空时检测所有
-* -domain 上传地址，默认为空,用Text2KV项目建立的简易文件存储storage.example.com
-* -token 上传地址的token，默认为空
-* -httplimit HTTP最大延迟(ms) (default 1000)
-* -iplab 为true时检查ip库中的文件并依次下载 (default false)
-* -max 并发请求最大协程数 (default 1000)
-* -mulnum float
-        多协程测速造成测速不准，可进行倍数补偿 (default 1)
 * -outfile 输出文件名称(自动设置) (default "result.csv")
 * -port 默认端口 (default 443)
-* -speedlimit 最低下载速度(MB/s) (default 4)
-* -speedtest 下载测速协程数量,设为0禁用测速 (default 5)
-* -tcplimit TCP最大延迟(ms) (default 1000)
-* -tls  是否启用TLS (default true)
-
-* -url 测速文件地址 (default "speed.cloudflare.com/__down?bytes=500000000")
 * -num 测速结果数量 (default 6)
 * -dlall 为true时检查ip库中的文件并依次下载
+* -speedlimit 最低下载速度(MB/s) (default 4)
+* -max 并发请求最大协程数 (default 1000)
+* -speedtest 下载测速协程数量,设为0禁用测速 (default 5)
+* -tcplimit TCP最大延迟(ms) (default 1000)
+* -httplimit HTTP最大延迟(ms) (default 1000)
+* -iplab 为true时检查ip库中的文件并依次下载 (default false)
+* -mulnum 多协程测速造成测速不准，可进行倍数补偿 (default 1)
+* -tls  是否启用TLS (default true)
+* -url 测速文件地址 (default "speed.cloudflare.com/__down?bytes=500000000")
+* -country 国家代码(US,SG,JP,DE...)，以逗号分隔，留空时检测所有
+* -not 排除的国家代码(US,SG,JP,DE...)
+* -domain 上传地址，默认为空,用Text2KV项目建立的简易文件存储storage.example.com (default "")
+* -token 上传地址的token(default "")
+* -api ip信息查询api，免费申请，api.ipapi.is，如留空则使用免费接口 (default "")
 
 命令行键入 `-h` `help` 获取帮助 `./CloudflareBestIP.exe -h`
 
@@ -61,7 +61,7 @@ go build -o BestipTest.exe main.go update.go
 ### 设置参数
 
 ```powershell
-./BestipTest.exe -tcplimit=300 -httplimit=300 -speedlimit=5 -tls=true -port=443 -iplab=false -max=1000 -speedtest=5 -file="txt.zip" -outfile="result.csv" -domain="x.xxx.com" -token="password" -countries="US,Sg,DE" -num=10 -dlall=false
+./BestipTest.exe -tcplimit=300 -httplimit=300 -speedlimit=5 -tls=true -port=443 -iplab=false -max=1000 -speedtest=5 -file="txt.zip" -outfile="result.csv" -num=10 -dlall=false -countries="US,Sg,DE" -not="HK" -domain="" -token="" -api=""
 ```
 
 请替换参数值以符合您的实际需求。
@@ -69,6 +69,8 @@ go build -o BestipTest.exe main.go update.go
 **注意：**
 
 `-domain="x.xxx.com"` 和 `-token="password"`,当优选结果>0时会提示是否上传优选ip结果到云端，需要输入域名和token。可以参考<https://github.com/sinspired/CF-Workers-TEXT2KV> 自行搭建文件存储服务
+
+`api`请自行申请
 
 **文件格式：**
 
@@ -89,7 +91,6 @@ go build -o BestipTest.exe main.go update.go
 **输出结果：**
 
 优化了命令行界面输出，可以直观查看程序执行情况，最终会把优选ip结果存入  `result_"源文件名".csv` 中。
-
 
 # 最新发行版下载
 
