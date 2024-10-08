@@ -62,7 +62,7 @@ go build -o BestipTest.exe main.go
 ### 设置参数
 
 ```powershell
-./BestipTest.exe -tcplimit=300 -httplimit=300 -speedlimit=5 -tls=true -port=443 -iplib=false -max=1000 -speedtest=5 -file="txt.zip" -outfile="result.csv" -num=10 -dlall=false -countries="US,Sg,DE" -not="HK" -domain="" -token="" -api=""
+./BestipTest.exe -tcplimit=300 -httplimit=300 -speedlimit=5 -tls=true -port=443 -iplib=false -max=1000 -speedtest=1 -file="txt.zip" -outfile="result.csv" -num=10 -dlall=false -countries="US,Sg,DE" -not="HK" -domain="" -token="" -api=""
 ```
 
 请替换参数值以符合您的实际需求。
