@@ -37,7 +37,7 @@ var (
 	outFile          = flag.String("outfile", "result.csv", "输出文件名称(自动设置)")                        // 输出文件名称
 	defaultPort      = flag.Int("port", 443, "默认端口")                                               // 端口
 	maxThreads       = flag.Int("max", 200, "并发请求最大协程数")                                           // 最大协程数
-	speedTestThreads = flag.Int("speedtest", 5, "下载测速协程数量,设为0禁用测速")                                // 下载测速协程数量
+	speedTestThreads = flag.Int("speedtest", 1, "下载测速协程数量,设为0禁用测速")                                // 下载测速协程数量
 	speedLimit       = flag.Float64("speedlimit", 5, "最低下载速度(MB/s)")                               // 最低下载速度
 	speedTestURL     = flag.String("url", "speed.cloudflare.com/__down?bytes=200000000", "测速文件地址") // 测速文件地址
 	enableTLS        = flag.Bool("tls", true, "是否启用TLS")                                           // TLS是否启用
