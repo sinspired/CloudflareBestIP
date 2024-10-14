@@ -32,7 +32,7 @@ go build -o BestipTest.exe main.go
 * -dlall 为true时检查ip库中的文件并依次下载
 * -speedlimit 最低下载速度(MB/s) (default 4)
 * -max 并发请求最大协程数 (default 1000)
-* -speedtest 下载测速协程数量,设为0禁用测速 (default 5)
+* -speedtest 下载测速协程数量,设为0禁用测速 (default 1)
 * -tcplimit TCP最大延迟(ms) (default 1000)
 * -httplimit HTTP最大延迟(ms) (default 1000)
 * -iplib 为true时检查ip库中的文件并依次下载 (default false)
@@ -62,7 +62,7 @@ go build -o BestipTest.exe main.go
 ### 设置参数
 
 ```powershell
-./BestipTest.exe -tcplimit=300 -httplimit=300 -speedlimit=5 -tls=true -port=443 -iplib=false -max=1000 -speedtest=5 -file="txt.zip" -outfile="result.csv" -num=10 -dlall=false -countries="US,Sg,DE" -not="HK" -domain="" -token="" -api=""
+./BestipTest.exe -tcplimit=300 -httplimit=300 -speedlimit=5 -tls=true -port=443 -iplib=false -max=1000 -speedtest=5 -file="txt.zip" -outfile="result_源文件名.csv" -num=10 -dlall=false -countries="US,Sg,DE" -not="HK" -domain="" -token="" -api=""
 ```
 
 请替换参数值以符合您的实际需求。
@@ -89,6 +89,7 @@ go build -o BestipTest.exe main.go
 
 * txt文件，可命名为 ip_filename.txt，程序会识别"_"切出filename，以便设置输出文件名 result_filename.csv
 * zip文件，直接filename.zip
+* -outfile，建议使用 `result_"源文件名".csv` 格式
 
 **输出结果：**
 

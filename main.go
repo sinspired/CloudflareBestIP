@@ -1245,7 +1245,15 @@ func handleQualifiedResults(results []speedTestResult) {
 					fmt.Print(".")
 				}()
 				OutFileName := strings.Split(*outFile, ".")[0]
-				suffixName := strings.Split(OutFileName, "_")[1]
+				
+				// 如果 -outFile 参数错误设置
+				var suffixName string
+				if strings.Contains(OutFileName, "_") {
+					suffixName = strings.Split(OutFileName, "_")[1]
+				} else {
+					suffixName = OutFileName
+				}
+
 				dataCenterCountry := res.country
 				ipTag := getIPTag(res.ip, res.port, dataCenterCountry, suffixName)
 				if ipTag == "" {
