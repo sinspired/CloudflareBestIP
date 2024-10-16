@@ -9,10 +9,28 @@ jobs:
   build-release:
     runs-on: ubuntu-latest
     
+    strategy:
+      matrix:
+        include:
+          - GOOS: linux
+            GOARCH: amd64
+            output_name: bestipTestVIP_linux_amd64
+          - GOOS: windows
+            GOARCH: amd64
+            output_name: bestipTestVIP.exe
+          - GOOS: darwin
+            GOARCH: amd64
+            output_name: bestipTestVIP_darwin_amd64
+          - GOOS: darwin
+            GOARCH: arm64
+            output_name: bestipTestVIP_darwin_arm64
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
+      with:
+        fetch-depth: 0
+    
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
@@ -21,47 +39,60 @@ jobs:
     - name: Install dependencies
       run: go mod tidy
     
-    - name: Build for Windows
+    - name: Build
       env:
-        GOOS: windows
-        GOARCH: amd64
-      run: go build -o bestipTest.exe
+        GOOS: ${{ matrix.GOOS }}
+        GOARCH: ${{ matrix.GOARCH }}
+      run: go build -o ${{ matrix.output_name }}
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.output_name }}
+        path: ${{ matrix.output_name }}
+        if-no-files-found: error
+
+  create-release:
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
     
     - name: Get tag description
       id: tag_description
       run: |
         TAG_DESCRIPTION=$(git tag -l --format='%(contents)' ${{ github.ref_name }})
-        echo "tag_description=${TAG_DESCRIPTION}" >> $GITHUB_ENV
-
+        echo "tag_description=${TAG_DESCRIPTION}" >> $GITHUB_OUTPUT
+      shell: bash
+    
     - name: Get latest commit message
       id: commit_message
       run: |
         COMMIT_MESSAGE=$(git log -1 --pretty=%B)
-        echo "commit_message=${COMMIT_MESSAGE}" >> $GITHUB_ENV
-    
+        echo "commit_message=${COMMIT_MESSAGE}" >> $GITHUB_OUTPUT
+      shell: bash
+
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref_name }}
-        release_name: "${{ github.ref_name }} ${{ env.tag_description }}"
-        # body: |
-        #   ${{ github.action }} :${{ env.commit_message }}
-        draft: false
-        prerelease: false
-    
-    - name: Upload Windows Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./bestipTest.exe
-        asset_name: bestipTest.exe
-        asset_content_type: application/vnd.microsoft.portable-executable
+      run: |
+        gh release create ${{ github.ref_name }} \
+          --title "${{ github.ref_name }} ${{ steps.tag_description.outputs.tag_description }}" \
+          --notes "Release for ${{ github.ref_name }}
 
-
-
-        
+        Changes in this release:
+        ${{ steps.commit_message.outputs.commit_message }}" \
+          --draft=false \
+          bestipTestVIP_linux_amd64 \
+          bestipTestVIP.exe \
+          bestipTestVIP_darwin_amd64 \
+          bestipTestVIP_darwin_arm64

@@ -33,7 +33,6 @@ go build -o BestipTest.exe main.go
 * -speedlimit 最低下载速度(MB/s) (default 4)
 * -max 并发请求最大协程数 (default 1000)
 * -speedtest 下载测速协程数量,设为0禁用测速 (default 1)
-* -speedtest 下载测速协程数量,设为0禁用测速 (default 1)
 * -tcplimit TCP最大延迟(ms) (default 1000)
 * -httplimit HTTP最大延迟(ms) (default 1000)
 * -iplib 为true时检查ip库中的文件并依次下载 (default false)

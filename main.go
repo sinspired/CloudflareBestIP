@@ -23,7 +23,6 @@ import (
 
 	"github.com/VividCortex/ewma"
 	"github.com/mattn/go-ieproxy"
-	"golang.org/x/sys/windows/registry"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -73,6 +72,7 @@ const (
 )
 
 var (
+	// requestURL = "st.notime.icu/cdn-cgi/trace" // 请求trace URL,自建的貌似会造成数据中心识别错误
 	requestURL       = "speed.cloudflare.com/cdn-cgi/trace"     // 请求trace URL
 	locationsJsonUrl = "https://speed.cloudflare.com/locations" // location.json下载 URL
 
@@ -133,13 +133,17 @@ var ipPortList []IPPort // 全局变量，存储 IP:port 格式的数据
 
 // 尝试提升文件描述符的上限
 func increaseMaxOpenFiles() {
-	fmt.Println("正在尝试提升文件描述符的上限...")
-	cmd := exec.Command("bash", "-c", "ulimit -n 10000")
-	_, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Printf("提升文件描述符上限时出现错误: %v\n", err)
+	if runtime.GOOS != "windows" {
+		fmt.Println("正在尝试提升文件描述符的上限...")
+		cmd := exec.Command("bash", "-c", "ulimit -n 10000")
+		_, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("提升文件描述符上限时出现错误: %v\n", err)
+		} else {
+			fmt.Printf("文件描述符上限已提升!\n")
+		}
 	} else {
-		fmt.Printf("文件描述符上限已提升!\n")
+		fmt.Println("Windows系统不需要提升文件描述符上限")
 	}
 }
 
@@ -157,7 +161,10 @@ func clearScreen() {
 	}
 
 	cmd.Stdout = os.Stdout
-	cmd.Run()
+	err := cmd.Run()
+	if err != nil {
+		return
+	}
 }
 
 // 功能函数
@@ -264,7 +271,7 @@ func downloadWithIEProxy(downloadURL string) ([]byte, error) {
 // autoNetworkDetection 自动检测网络环境，返回一个bool值
 func autoNetworkDetection() bool {
 	// 检查系统代理是否启用
-	if checkProxyEnabled() {
+	if task.CheckProxyEnabled() {
 		fmt.Println("\033[2J\033[0;0H\033[31m检测到系统代理已启用，请关闭VPN后重试。\033[0m")
 		return false
 	} else {
@@ -291,22 +298,29 @@ func autoNetworkDetection() bool {
 	return true
 }
 
-// checkProxyEnabled 检测是否开启系统代理服务器
-func checkProxyEnabled() bool {
-	k, err := registry.OpenKey(registry.CURRENT_USER, `Software\Microsoft\Windows\CurrentVersion\Internet Settings`, registry.QUERY_VALUE)
-	if err != nil {
-		fmt.Println("无法打开注册表键:", err)
-	}
-	defer k.Close()
+// 代码转移到 task/windows.go task/linux.go 以支持跨系统编译
+// // checkProxyEnabled 检测是否开启系统代理服务器
+// func checkProxyEnabled() bool {
+// 	if runtime.GOOS == "windows" {
+// 		k, err := registry.OpenKey(registry.CURRENT_USER, `Software\Microsoft\Windows\CurrentVersion\Internet Settings`, registry.QUERY_VALUE)
+// 		if err != nil {
+// 			fmt.Println("无法打开注册表键:", err)
+// 			return false
+// 		}
+// 		defer k.Close()
 
-	proxyEnable, _, err := k.GetIntegerValue("ProxyEnable")
-	if err != nil {
-		fmt.Println("无法读取ProxyEnable值:", err)
-		return false
-	}
+// 		proxyEnable, _, err := k.GetIntegerValue("ProxyEnable")
+// 		if err != nil {
+// 			fmt.Println("无法读取ProxyEnable值:", err)
+// 			return false
+// 		}
 
-	return proxyEnable == 1 // proxyEnable键值若为1，说明开启了代理服务器，返回true
-}
+// 		return proxyEnable == 1
+// 	}
+
+// 	// 对于非Windows系统，我们可以检查环境变量
+// 	return os.Getenv("HTTP_PROXY") != "" || os.Getenv("HTTPS_PROXY") != ""
+// }
 
 // checkNormalUrl 尝试连接指定的URL，检查网络是否可访问
 func checkNormalUrl(url string) bool {
@@ -784,7 +798,7 @@ func readIPs(File string) ([]string, error) {
 					portStr = strings.TrimSpace(portStr)
 					port, err := strconv.Atoi(portStr)
 					if err != nil {
-						fmt.Println("%s端口转换错误:%v", ipAddr, err)
+						fmt.Printf("%s端口转换错误:%v\n", ipAddr, err)
 						continue
 					}
 					// ipMap[ip] = struct{}{}
@@ -795,7 +809,7 @@ func readIPs(File string) ([]string, error) {
 					port, err := strconv.Atoi(portStr)
 					if err != nil {
 						fmt.Println(ipAddr)
-						fmt.Println("%s端口转换错误:%v", ipAddr, err)
+						fmt.Printf("%s端口转换错误:%v\n", ipAddr, err)
 						continue
 					}
 					// ipMap[ip] = struct{}{}
@@ -1245,7 +1259,7 @@ func handleQualifiedResults(results []speedTestResult) {
 					fmt.Print(".")
 				}()
 				OutFileName := strings.Split(*outFile, ".")[0]
-				
+
 				// 如果 -outFile 参数错误设置
 				var suffixName string
 				if strings.Contains(OutFileName, "_") {
