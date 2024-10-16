@@ -66,6 +66,8 @@ jobs:
 
     - name: Download all artifacts
       uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
     
     - name: Get tag description
       id: tag_description
@@ -81,6 +83,10 @@ jobs:
         echo "commit_message=${COMMIT_MESSAGE}" >> $GITHUB_OUTPUT
       shell: bash
 
+    - name: List artifacts
+      run: ls -R ./artifacts
+      shell: bash
+
     - name: Create Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -92,7 +98,8 @@ jobs:
         Changes in this release:
         ${{ steps.commit_message.outputs.commit_message }}" \
           --draft=false \
-          bestipTestVIP_linux_amd64 \
-          bestipTestVIP.exe \
-          bestipTestVIP_darwin_amd64 \
-          bestipTestVIP_darwin_arm64
+          ./artifacts/bestipTestVIP_linux_amd64/bestipTestVIP_linux_amd64 \
+          ./artifacts/bestipTestVIP.exe/bestipTestVIP.exe \
+          ./artifacts/bestipTestVIP_darwin_amd64/bestipTestVIP_darwin_amd64 \
+          ./artifacts/bestipTestVIP_darwin_arm64/bestipTestVIP_darwin_arm64
+      shell: bash
