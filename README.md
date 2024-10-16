@@ -4,9 +4,13 @@
 [![Release Version](https://img.shields.io/github/v/release/sinspired/CloudflareBestIP?display_name=tag&logo=github&label=Release)](https://github.com/sinspired/CloudflareBestIP/releases/latest)
 [![GitHub repo size](https://img.shields.io/github/repo-size/sinspired/CloudflareBestIP?logo=github)
 ](https://github.com/sinspired/CloudflareBestIP)
-[![GitHub last commit](https://img.shields.io/github/last-commit/sinspired/CloudflareBestIP?logo=github&label=最后提交：)](ttps://github.com/sinspired/CloudflareBestIP)
+[![GitHub last commit](https://img.shields.io/github/last-commit/sinspired/CloudflareBestIP?logo=github&label=最后提交：)](https://github.com/sinspired/CloudflareBestIP)
 
-CloudflareBestIP 采用go编写的小工具。能够自动下载知名的几个ip库，自适应识别文件格式进行测速优选。如设置了domain和token，优选ip结果可直接上传到云端，实现自动化更新。
+CloudflareBestIP 采用go编写的小工具。能够自动下载知名的几个ip库，自适应识别文件格式进行测速优选。
+
+如设置了domain和token，优选ip结果可直接上传到云端，实现自动化更新。
+
+支持跨平台编译。
 
 # 安装
 
@@ -53,19 +57,28 @@ go build -o BestipTest.exe main.go
 
 ### 不带参数运行
 
-```powershell
+Linux
+
+```shell
+./bestipTest_linux_amd64
+```
+
+Windows
+
+```pwsh
 ./BestipTest.exe
 ```
 
-默认参数会检测网络情况（请关闭代理），之后会自动下载一个ip库并自动测速
+默认参数会检测网络情况（请关闭代理），之后会自动下载默认ip库并自动测速
 
 ### 设置参数
 
-```powershell
+```pwsh
 ./BestipTest.exe -tcplimit=300 -httplimit=300 -speedlimit=5 -tls=true -port=443 -iplib=false -max=1000 -speedtest=5 -file="txt.zip" -outfile="result_源文件名.csv" -num=10 -dlall=false -countries="US,Sg,DE" -not="HK" -domain="" -token="" -api=""
 ```
 
 请替换参数值以符合您的实际需求。
+
 
 **注意：**
 
@@ -94,6 +107,11 @@ go build -o BestipTest.exe main.go
 **输出结果：**
 
 优化了命令行界面输出，可以直观查看程序执行情况，优选ip结果存入  `result_"源文件名".csv` 中。
+
+关于 ASN 信息 ，可自行至 https://ipapi.is/ 申请api，程序默认会判断优选 iP 的iso及company信息，会对IP类型进行简单判断。比如“商宽”、“机房”等。
+
+如顺利获取 asn 信息，理想的 IP 国家格式将被设置为：`US-Uni商务-CF-209242丨FileName`，未获取到 asn 信息会回退为 `US`
+
 
 # 最新发行版下载
 
