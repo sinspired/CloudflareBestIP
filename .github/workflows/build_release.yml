@@ -14,16 +14,16 @@ jobs:
         include:
           - GOOS: linux
             GOARCH: amd64
-            output_name: bestipTestVIP_linux_amd64
+            output_name: bestipTest_linux_amd64
           - GOOS: windows
             GOARCH: amd64
-            output_name: bestipTestVIP.exe
+            output_name: bestipTest.exe
           - GOOS: darwin
             GOARCH: amd64
-            output_name: bestipTestVIP_darwin_amd64
+            output_name: bestipTest_darwin_amd64
           - GOOS: darwin
             GOARCH: arm64
-            output_name: bestipTestVIP_darwin_arm64
+            output_name: bestipTest_darwin_arm64
 
     steps:
     - name: Checkout code
@@ -98,8 +98,8 @@ jobs:
         Changes in this release:
         ${{ steps.commit_message.outputs.commit_message }}" \
           --draft=false \
-          ./artifacts/bestipTestVIP_linux_amd64/bestipTestVIP_linux_amd64 \
-          ./artifacts/bestipTestVIP.exe/bestipTestVIP.exe \
-          ./artifacts/bestipTestVIP_darwin_amd64/bestipTestVIP_darwin_amd64 \
-          ./artifacts/bestipTestVIP_darwin_arm64/bestipTestVIP_darwin_arm64
+          ./artifacts/bestipTest_linux_amd64/bestipTest_linux_amd64 \
+          ./artifacts/bestipTest.exe/bestipTest.exe \
+          ./artifacts/bestipTest_darwin_amd64/bestipTest_darwin_amd64 \
+          ./artifacts/bestipTest_darwin_arm64/bestipTest_darwin_arm64
       shell: bash

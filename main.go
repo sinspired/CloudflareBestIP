@@ -72,7 +72,6 @@ const (
 )
 
 var (
-	// requestURL = "st.notime.icu/cdn-cgi/trace" // 请求trace URL,自建的貌似会造成数据中心识别错误
 	requestURL       = "speed.cloudflare.com/cdn-cgi/trace"     // 请求trace URL
 	locationsJsonUrl = "https://speed.cloudflare.com/locations" // location.json下载 URL
 
