@@ -5,8 +5,11 @@
 *.so
 *.dylib
 *.ini
-*.yaml
 
+*test*.*
+*_temp*.*
+*_tmp*.*
+*cache/
 
 # Test binary, built with `go test -c`
 *.test
@@ -42,3 +45,4 @@ ipLAB/
 # ipscanner/
 FofaCSV/
 FofaCSVOutput/
+dist/
