@@ -6,6 +6,8 @@
 ](https://github.com/sinspired/CloudflareBestIP)
 [![GitHub last commit](https://img.shields.io/github/last-commit/sinspired/CloudflareBestIP?logo=github&label=最后提交：)](https://github.com/sinspired/CloudflareBestIP)
 
+[![build and release](https://github.com/sinspired/CloudflareBestIP/actions/workflows/create_release.yml/badge.svg)](https://github.com/sinspired/CloudflareBestIP/actions/workflows/create_release.yml)
+
 CloudflareBestIP 采用go编写的小工具。能够自动下载知名的几个ip库，自适应识别文件格式进行测速优选。
 
 如设置了domain和token，优选ip结果可直接上传到云端，实现自动化更新。
