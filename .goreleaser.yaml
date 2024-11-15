@@ -19,6 +19,7 @@ builds:
     targets:
       - windows_amd64
       - linux_amd64
+      - linux_arm64
       - darwin_amd64
       - darwin_arm64
 
@@ -42,7 +43,12 @@ builds:
 
 archives:
   - format: binary # 设置格式为 `binary`，直接输出二进制
-  
+    name_template: >-
+      {{- if eq .Os "windows" -}}
+        {{ .Binary }}
+      {{- else -}}
+        {{ .Binary }}_{{ title .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}
+      {{- end }}
 checksum:
   name_template: "checksums.txt"
 
@@ -86,12 +92,12 @@ changelog:
 
     # i18n: 添加西班牙语翻译，完善国际化支持。
     - title: "Translation updates" # “翻译更新”
-      regexp: '^.*?(i18n|翻译|localization|国际化|本地化)(\(.+\))??!?[-:\s].+$'
+      regexp: '^.*?(local?|i18n|翻译|localization|国际化|本地化)(\(.+\))??!?[-:\s].+$'
       order: 600
 
     # optimization: 优化用户登录流程，减少加载时间。
     - title: "Code Optimization" # “代码优化”
-      regexp: '^.*?(optimization|优化|性能|代码|performance|refactor)(\(.+\))??!?[-:\s].+$'
+      regexp: '^.*?(opt?|optimization|优化|性能|代码|performance|refactor)(\(.+\))??!?[-:\s].+$'
       order: 700
 
     # config: 更新环境变量配置文件。
