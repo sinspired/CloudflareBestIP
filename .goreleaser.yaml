@@ -57,66 +57,98 @@ changelog:
   use: github
   filters:
     exclude:
-      - "^test(:|\\()"
-      - "merge conflict"
-      - "Merge (pull request|remote-tracking branch|branch)"
-      - "go mod tidy"
+      - "^test(:|\\()" # 排除测试相关提交
+      - "merge conflict" # 排除冲突合并记录
+      - "^Merge (pull request|remote-tracking branch|branch)" # 排除合并请求
+      - "go mod tidy" # 排除依赖清理提交
       - "^更新文件"
       - "^测试(:|\\()"
 
   groups:
     # feat(UI): 新增用户登录界面、新增: 实现用户认证功能。
-    - title: "New Features" # “新功能”
-      regexp: '^.*?(feat|功能|新增|feature)(\(.+\))??!?[-:\s].+$'
-      order: 100 # 排序优先级
+    # - title: "New Features" # “新功能”
+    # - title: "✨ New Features (新功能)"
+    - title: "{{ if .Env.USE_EMOJI }}✨ New Features (新功能){{ else }}New Features{{ end }}"
+      regexp: '^(?i).*?(feat|功能|新增|feature|新特性)(\(.+\))??!?[-:\s].+$'
+      order: 100
+
 
     # fix: 修复UI组件加载延迟问题
-    - title: "Bug fixes" # “Bug 修复”
-      regexp: '^.*?(fix|修复|bug|错误|bugfix)(\(.+\))??!?[-:\s].+$'
+    # - title: "Bug fixes" # “Bug 修复”
+    # - title: "🐛 Bug Fixes (修复问题)"
+    - title: "{{ if .Env.USE_EMOJI }}🐛 Bug Fixes (修复问题){{ else }}Bug fixes{{ end }}"
+      regexp: '^(?i).*?(fix|修复|bug|错误|bugfix)(\(.+\))??!?[-:\s].+$'
       order: 200
-
-    # sec: 修复 XSS 漏洞，增强安全策略。
-    - title: "Security updates" # “安全更新”
-      regexp: '^.*?(sec|安全|漏洞|security)(\(.+\))??!?[-:\s].+$'
-      order: 300
-
-    # deps: 更新依赖库版本，提升稳定性。
-    - title: "Dependency updates" # “依赖更新”
-      regexp: '^.*?(deps|依赖|dependency)(\(.+\))??!?[-:\s].+$'
-      order: 400
-
-    # docs: 更新API使用说明，添加示例代码。
-    - title: "Documentation updates" # “文档更新”
-      regexp: '^.*?(docs?|文档|说明|documentation|注释)(\(.+\))??!?[-:\s].+$'
-      order: 500
-
-    # i18n: 添加西班牙语翻译，完善国际化支持。
-    - title: "Translation updates" # “翻译更新”
-      regexp: '^.*?(local?|i18n|翻译|localization|国际化|本地化)(\(.+\))??!?[-:\s].+$'
-      order: 600
-
-    # optimization: 优化用户登录流程，减少加载时间。
-    - title: "Code Optimization" # “代码优化”
-      regexp: '^.*?(opt?|optimization|优化|性能|代码|performance|refactor)(\(.+\))??!?[-:\s].+$'
-      order: 700
 
     # config: 更新环境变量配置文件。
     - title: "Config updates" # “配置更新”
-      regexp: '^.*?(config|配置|configuration)(\(.+\))??!?[-:\s].+$'
+    # - title: "⚙️ Config Updates (配置更新)"
+      regexp: '^(?i).*?(config|配置|configuration)(\(.+\))??!?[-:\s].+$'
+      order: 300
+
+    # sec: 修复 XSS 漏洞，增强安全策略。
+    - title: "Security updates" # “安全更新”
+    # - title: "🔒 Security Updates (安全更新)"
+      regexp: '^(?i).*?(sec|安全|security)(\(.+\))??!?[-:\s].+$'
+      order: 400
+
+    # refactor: 代码重构，版本更新。
+    - title: "Code Refactor" # “代码重构(既不是增加feature，也不是修复bug)”
+    - title: "🚀 Code Refactor (代码重构)"
+      regexp: '^(?i).*?(refactor|重构|major|大版本)(\(.+\))??!?[-:\s].+$'
+      order: 500
+
+    # pref: 优化用户登录流程，减少加载时间。
+    # - title: "Code Optimization" # “性能优化”
+    - title: "⚡️ Code Optimization (性能优化)"
+      regexp: '^(?i).*?(perf?|performance|优化|性能|opt?|optimization)(\(.+\))??!?[-:\s].+$'
+      order: 600
+
+    # deps: 更新依赖库版本，提升稳定性。
+    - title: "Dependency updates" # “依赖更新”
+    # - title: "📦 Dependency Updates (依赖更新)"
+      regexp: '^(?i).*?(deps|依赖|dependency)(\(.+\))??!?[-:\s].+$'
+      order: 700
+
+    # docs: 更新API使用说明，添加示例代码。
+    - title: "Documentation updates" # “文档更新”
+    # - title: "📝 Documentation Updates (文档更新)"
+      regexp: '^(?i).*?(docs?|文档|说明|documentation|注释)(\(.+\))??!?[-:\s].+$'
       order: 800
+
+    # i18n: 添加西班牙语翻译，完善国际化支持。
+    - title: "Translation updates" # “翻译更新”
+    # - title: "🌐 Translation Updates (翻译更新)"
+      regexp: '^(?i).*?(local?|i18n|翻译|localization|国际化|本地化)(\(.+\))??!?[-:\s].+$'
+      order: 900
 
     # ci(build): 添加持续集成任务，自动构建和发布。
     - title: "Build process updates" # “构建过程更新”
-      regexp: '^.*?(build|ci|构建|持续集成)(\(.+\))??!?[-:\s].+$'
-      order: 900
+    # - title: "🛠 Build Process Updates (构建过程更新)"
+      regexp: '^(?i).*?(build|ci|构建|持续集成)(\(.+\))??!?[-:\s].+$'
+      order: 1000
 
     # test: 增加单元测试用例，覆盖率提升到 85%。
-    - title: "Test-related changes" # “测试相关变更”
-      regexp: '^.*?(test|测试|单元测试|集成测试)(\(.+\))??!?[-:\s].+$'
-      order: 950
+    - title: "Test-related" # “测试相关”
+    # - title: "✅ Test-Related(测试相关)"
+      regexp: '^(?i).*?(test|测试|单元测试|集成测试)(\(.+\))??!?[-:\s].+$'
+      order: 1100
+
+    # style: 代码风格、格式变动（不影响代码逻辑）
+    - title: "Style changes" # “格式变动”
+    # - title: "🎨 Style Changes (样式变更)"
+      regexp: '^(?i).*?(style|样式|format|格式)(\(.+\))??!?[-:\s].+$'
+      order: 1200
+
+    # style: 回滚提交
+    - title: "Revert commit" # “回滚提交”
+    # - title: " 🔙 revert commites (回滚提交)"
+      regexp: '^(?i).*?(revert|回滚)(\(.+\))??!?[-:\s].+$'
+      order: 1300
 
     # chore: 更新项目文档索引，整理文件结构。
     - title: "Other work" # “其他工作”
+    # - title: "🛠 Other Work (其他工作)"
       order: 9999
 
 release:
