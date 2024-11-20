@@ -28,11 +28,10 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: stable
-
-      # 添加控制emoji标题的变量
-      - name: Set Changelog Emoji Option
-        run: echo "USE_EMOJI_TITLE=true" >> $GITHUB_ENV
-
+      
+      - name: Debug Environment Variables
+        run: echo "USE_EMOJI=$USE_EMOJI_TITLE"
+      
       # More assembly might be required: Docker logins, GPG, etc.
       # It all depends on your needs.
       - name: Run GoReleaser
@@ -47,6 +46,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
           # GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-
-          # Emoji标题变量
-          USE_EMOJI_TITLE: ${{ env.USE_EMOJI_TITLE }}
